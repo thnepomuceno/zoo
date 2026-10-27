@@ -1,0 +1,83 @@
+[gd_scene format=3 uid="uid://d306yvpx0ema6"]
+
+[ext_resource type="Script" uid="uid://caqwjryfunrud" path="res://godot/scenes/floresta.gd" id="1_52nv7"]
+[ext_resource type="Texture2D" uid="uid://cnqxuacsb3w4v" path="res://icon.svg" id="2_wlfo0"]
+[ext_resource type="Texture2D" uid="uid://byyh8cs7geoul" path="res://godot/assets/floresta/901cc787-2e1c-4038-8e52-4f627eb3e6dc.jpg" id="3_e1klu"]
+
+[node name="Floresta" type="Node2D" unique_id=1671546784]
+script = ExtResource("1_52nv7")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=305051213]
+offset_top = -2.0
+offset_right = 1151.0
+offset_bottom = 647.0
+size_flags_vertical = 3
+texture = ExtResource("3_e1klu")
+expand_mode = 1
+metadata/_edit_lock_ = true
+
+[node name="Elefante" type="Sprite2D" parent="." unique_id=505939499]
+
+[node name="Interface" type="CanvasLayer" parent="." unique_id=1609302861]
+
+[node name="Titulo" type="Label" parent="Interface" unique_id=450294050]
+anchors_preset = -1
+anchor_right = 0.056
+anchor_bottom = 0.035
+offset_left = 552.0
+offset_top = 54.0
+offset_right = 527.488
+offset_bottom = 54.32
+metadata/_edit_use_anchors_ = true
+
+[node name="Missao" type="Label" parent="Interface" unique_id=1905426770]
+anchors_preset = -1
+anchor_right = 0.017
+anchor_bottom = 0.018000001
+offset_left = 325.0
+offset_top = 106.0
+offset_right = 345.416
+offset_bottom = 117.336
+metadata/_edit_use_anchors_ = true
+
+[node name="Status" type="Label" parent="Interface" unique_id=1963191170]
+anchors_preset = -1
+anchor_top = 0.018000003
+anchor_right = 0.012999998
+anchor_bottom = 0.0488642
+offset_left = 74.0
+offset_top = 225.336
+offset_right = 109.024
+offset_bottom = 248.336
+metadata/_edit_use_anchors_ = true
+
+[node name="Pontuacao" type="Label" parent="Interface" unique_id=2122411145]
+offset_left = 961.0
+offset_top = 125.0
+offset_right = 1001.0
+offset_bottom = 148.0
+
+[node name="Pontuacao2" type="Label" parent="Interface" unique_id=710785544]
+offset_left = 31.0
+offset_top = 208.0
+offset_right = 71.0
+offset_bottom = 231.0
+metadata/_edit_use_anchors_ = true
+
+[node name="Tartaruga" type="Sprite2D" parent="." unique_id=1029494376]
+position = Vector2(69, 75)
+scale = Vector2(1, 1.03125)
+texture = ExtResource("2_wlfo0")
+
+[node name="Patinho" type="Sprite2D" parent="." unique_id=818109553]
+position = Vector2(96, 563)
+texture = ExtResource("2_wlfo0")
+
+[node name="Macaco" type="Sprite2D" parent="." unique_id=1720241513]
+position = Vector2(1076, 67)
+scale = Vector2(0.76475596, 0.80383766)
+texture = ExtResource("2_wlfo0")
+
+[node name="Peixinho" type="Sprite2D" parent="." unique_id=512535348]
+position = Vector2(1078, 566)
+texture = ExtResource("2_wlfo0")

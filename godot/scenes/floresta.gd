@@ -304,6 +304,22 @@ func _ao_terminar_fala() -> void:
 	if iniciada and etapa < 3 and not animando and not cutucados.has(etapa):
 		espera.start(ESPERA_CUTUCAR)
 
+## Tecla K: simula a câmera pintando o amigo da vez com cores sorteadas.
+## Antes de começar, inicia a aventura; depois do final, repinta um amigo qualquer.
+func _unhandled_input(evento: InputEvent) -> void:
+	if not (evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_K):
+		return
+	get_viewport().set_input_as_handled()
+	if not iniciada:
+		iniciar_aventura()
+		return
+	if animando:
+		return
+	var nome: String = NOMES[etapa] if etapa < 3 else NOMES.pick_random()
+	var paleta: Array = CORES.keys()
+	paleta.shuffle()
+	processar_animais([{"nome": nome, "cores": paleta.slice(0, randi_range(1, 3))}])
+
 func cutucar() -> void:
 	if iniciada and etapa < 3 and not animando and not narrador.falando:
 		cutucados[etapa] = true

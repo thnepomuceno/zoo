@@ -1,4 +1,4 @@
-﻿# Zoo das Cores
+# Zoo das Cores
 
 Abra o project.godot da raiz no Godot e execute a cena principal.
 
@@ -31,8 +31,26 @@ Cores: bege, amarelo, laranja, verde, azul, marrom, rosa, roxo, vermelho, branco
 A leitura funciona enquanto o aplicativo está aberto. A captura e o reconhecimento da câmera são feitos pelo sistema externo.
 # Dinâmica da história
 
-A aventura segue a ordem **cachorro → dinossauro → leão**. A nuvem distraída levou as cores da Floresta dos Abraços, e a criança ajuda Pipoca, Dino e Léo a recuperá-las.
+A aventura segue a ordem **cachorro → dinossauro → leão**. A nuvem Nublina, distraída, tropeçou num arco-íris e engoliu as cores da Floresta dos Abraços. A criança ajuda Pipoca, Dino e Léo a recuperá-las.
 
-Clique em **Vamos pintar!** para começar. Cada capítulo é exibido e narrado, e aguarda o retorno da câmera. O JSON pinta o animal e libera a próxima parte da história. Leituras de animais de etapas futuras ficam guardadas até chegar sua vez. Um JSON vazio não avança a atividade nem apaga as pinturas.
+- **Começo dramático:** a floresta está cinza e escura, a Nublina cobre o sol e chove de leve. Os animais respiram devagar, suspiram e choram. O amigo da vez fica iluminado e chora mais.
+- **Cenário vivo:** as copas das árvores e a grama balançam com o vento (shader `godot/shaders/floresta.gdshader`), rajadas aparecem de vez em quando, folhas voam e o lago treme.
+- **Transformação:** quando o JSON chega, a Nublina solta uma bola de cor que voa até o animal. A cor se espalha a partir do centro dele, com estrelas e tinta. Depois ele pula de alegria, muda a expressão (sorriso, bochechas e brilho nos olhos) e solta corações.
+- **A floresta revive:** a cada amigo pintado, o fundo recupera parte da cor, a Nublina clareia e se afasta do sol, e a música fica mais alegre. No final aparecem um arco-íris, confetes e uma dancinha de todos.
+- Se o animal for pintado de novo, a cor é atualizada com uma nova explosão.
+- Se a criança demorar, o narrador dá um incentivo (uma vez por capítulo).
 
-Há música instrumental original em repetição, um efeito de celebração ao receber a pintura, botão para pausar a música e botão para ouvir novamente o capítulo atual. A narração utiliza a voz portuguesa do Windows; uma voz portuguesa foi detectada durante a verificação local.
+Leituras de animais de etapas futuras ficam guardadas até chegar sua vez. Um JSON vazio não avança a atividade nem apaga as pinturas.
+
+## Narração
+
+As falas ficam em `godot/assets/narracao/roteiro.json` e foram gravadas com voz neural (pt-BR Francisca, 12% mais rápida). Para mudar o texto ou a voz:
+
+```
+pip install edge-tts truststore
+python tools/gerar_narracao.py                       # todas as falas
+python tools/gerar_narracao.py cap_leao final_1      # só algumas
+python tools/gerar_narracao.py --voz pt-BR-ThalitaMultilingualNeural --velocidade +15%
+```
+
+Depois de gerar, abra o projeto no Godot para importar os áudios. Se faltar algum `.mp3`, a fala usa a melhor voz portuguesa do Windows. Os efeitos sonoros (`magia`, `sopro`, `vento` e `pop`) são sintetizados por `tools/gerar_efeitos.py`.

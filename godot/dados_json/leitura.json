@@ -1,10 +1,5 @@
 {
-  "tipo": "zoo.leitura",
-  "lido_em": "2026-10-27T16:00:00",
-  "desenhos": [
-	{ "id": "1", "nome": "tartaruga", "cores": ["verde"], "validado": true },
-	{ "id": "2", "nome": "patinho", "cores": ["amarelo"], "validado": true },
-	{ "id": "3", "nome": "macaco", "cores": ["marrom"], "validado": true },
-	{ "id": "4", "nome": "peixinho", "cores": ["azul"], "validado": true }
-  ]
+  "tipo": "asas.leitura",
+  "lido_em": "2026-10-23T14:23:35",
+  "desenhos": []
 }

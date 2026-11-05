@@ -3,35 +3,38 @@ extends Node2D
 const Tex := preload("res://godot/scenes/texturas.gd")
 const Animal := preload("res://godot/scenes/animal.gd")
 const Nuvem := preload("res://godot/scenes/nuvem.gd")
-const Coruja := preload("res://godot/scenes/coruja.gd")
+const Ajudante := preload("res://godot/scenes/ajudante.gd")
+const Cenarios := preload("res://godot/scenes/cenarios.gd")
 const Vento := preload("res://godot/scenes/vento.gd")
 const ArcoIris := preload("res://godot/scenes/arco_iris.gd")
 const Narrador := preload("res://godot/scenes/narrador.gd")
-const SHADER_FLORESTA := preload("res://godot/shaders/floresta.gdshader")
+const SHADER_CENARIO := preload("res://godot/shaders/cenario.gdshader")
+const MENU := "res://godot/scenes/menu.tscn"
 
 # Pode ser substituída no Inspector ou por -- --pasta-json=C:/fotos.
 @export_dir var pasta_json: String = "res://godot/dados_json"
-# Floresta Encantada (especificação "A Magia das Cores"): os animais, na ordem em que aparecem.
-const NOMES := ["onca", "macaco", "tamandua", "borboleta"]
-const ROTULOS := ["Onça amarela", "Macaco marrom", "Tamanduá preto", "Borboleta vermelha"]
-const PEDIDOS := ["a onça amarela", "o macaco marrom", "o tamanduá preto", "a borboleta vermelha"]
-const COR_PEDIDA := ["amarelo", "marrom", "preto", "vermelho"]
-const TITULOS := ["A onça tremendo na moita", "O macaco sem coragem", "O tamanduá tímido", "A borboleta que não voa"]
-const TOTAL := 4
 const CORES := {
 	"bege": "#dec49a", "amarelo": "#ffe059", "laranja": "#ff993d",
 	"verde": "#79c968", "azul": "#65b8ef", "marrom": "#a57753",
 	"rosa": "#f49cbe", "roxo": "#ac86dc", "vermelho": "#ef6b65",
 	"branco": "#ffffff", "preto": "#46434b", "cinza": "#aaaaaa"
 }
-# Quanto da floresta volta a ter cor a cada amigo pintado.
+# Quanto do cenário volta a ter cor a cada amigo pintado.
 const SATURACAO := [0.0, 0.32, 0.58, 0.8, 1.0]
 const BRILHO := [0.78, 0.85, 0.91, 0.97, 1.04]
 const VINHETA := [0.6, 0.45, 0.3, 0.15, 0.0]
-const POSICAO_NUVEM := [Vector2(1015, 100), Vector2(925, 94), Vector2(835, 90), Vector2(745, 86), Vector2(800, 72)]
 const POSICAO_ANIMAIS := [150.0, 405.0, 660.0, 915.0]
-const POSICAO_CORUJA := Vector2(1080, 268)
 const ESPERA_CUTUCAR := 40.0
+
+# Cenário da especificação "A Magia das Cores" (ver cenarios.gd): animais na ordem em que aparecem.
+var cenario: Dictionary
+var nomes: Array
+var rotulos: Array
+var pedidos: Array
+var cor_pedida: Array
+var titulos: Array
+var total: int
+var posicao_nuvem: Array
 
 var etapa: int = 0
 var iniciada: bool = false
@@ -44,7 +47,8 @@ var cutucados: Dictionary = {}
 
 var fundo: ShaderMaterial
 var nuvem: Node2D
-var coruja: Node2D
+var ajudante: Node2D
+var sol: Sprite2D
 var vento: Node2D
 var arco: Node2D
 var narrador: Node
@@ -70,12 +74,15 @@ func _ready() -> void:
 	for argumento in OS.get_cmdline_user_args():
 		if argumento.begins_with("--pasta-json="):
 			pasta_json = argumento.trim_prefix("--pasta-json=")
+		elif argumento.begins_with("--cenario="):
+			Cenarios.escolhido = argumento.trim_prefix("--cenario=")
+	carregar_cenario()
 	preparar_audio()
 	montar_cenario()
 	montar_interface()
 	narrador.legenda.connect(_ao_narrar)
 	narrador.terminou.connect(_ao_terminar_fala)
-	narrador.falar(["intro_1", "intro_2", "intro_3"])
+	narrador.falar(cenario["intro"])
 	var timer := Timer.new()
 	timer.wait_time = 0.75
 	timer.timeout.connect(ler_pasta)
@@ -89,31 +96,62 @@ func _ready() -> void:
 
 # ---------------------------------------------------------------- cenário
 
+func carregar_cenario() -> void:
+	cenario = Cenarios.atual()
+	if not cenario.get("pronto", false):
+		cenario = Cenarios.DADOS["floresta"]
+	nomes = cenario["nomes"]
+	rotulos = cenario["rotulos"]
+	pedidos = cenario["pedidos"]
+	cor_pedida = cenario["cor_pedida"]
+	titulos = cenario["capitulos"]
+	total = nomes.size()
+	posicao_nuvem = cenario["nuvem"]
+
 func montar_cenario() -> void:
-	var cenario: TextureRect = $Cenario
+	var imagem: TextureRect = $Cenario
+	imagem.texture = load(cenario["fundo"])
 	fundo = ShaderMaterial.new()
-	fundo.shader = SHADER_FLORESTA
-	cenario.material = fundo
+	fundo.shader = SHADER_CENARIO
+	fundo.set_shader_parameter("copas", cenario["copas"])
+	fundo.set_shader_parameter("centro_lago", cenario["lago"][0])
+	fundo.set_shader_parameter("raio_lago", cenario["lago"][1])
+	imagem.material = fundo
 	aplicar_clima(0, 0.0)
 
 	arco = ArcoIris.new()
-	arco.position = Vector2(576, 640)
+	arco.position = cenario["arco"]
 	add_child(arco)
 
-	coruja = Coruja.new()
-	coruja.position = POSICAO_CORUJA
-	add_child(coruja)
+	# Brilho do sol (fazenda): apagado atrás da nuvem, volta a brilhar no final.
+	if cenario["sol"] != Vector2.ZERO:
+		sol = Sprite2D.new()
+		sol.texture = Tex.brilho(128)
+		sol.position = cenario["sol"]
+		sol.scale = Vector2.ONE * 2.6
+		sol.modulate = Color(1, 0.93, 0.55, 0.0)
+		var soma := CanvasItemMaterial.new()
+		soma.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		sol.material = soma
+		add_child(sol)
+
+	ajudante = Ajudante.new()
+	ajudante.tipo = cenario["ajudante"]
+	ajudante.position = cenario["posicao_ajudante"]
+	add_child(ajudante)
 
 	nuvem = Nuvem.new()
-	nuvem.position = POSICAO_NUVEM[0]
+	nuvem.position = posicao_nuvem[0]
+	nuvem.scale = Vector2.ONE * float(cenario["escala_nuvem"])
+	nuvem.rosto = cenario.get("nuvem_rosto", false)
 	add_child(nuvem)
 
-	for i in range(TOTAL):
+	for i in range(total):
 		var animal := Animal.new()
 		add_child(animal)
-		animal.configurar(NOMES[i])
+		animal.configurar(nomes[i], cenario["esconderijo"])
 		animal.position = Vector2(POSICAO_ANIMAIS[i], 340)
-		animais[NOMES[i]] = animal
+		animais[nomes[i]] = animal
 
 	vento = Vento.new()
 	add_child(vento)
@@ -126,7 +164,7 @@ func montar_cenario() -> void:
 		som.tween_property(ambiente, "volume_db", -22.0, 2.0)
 	)
 
-## Clima da floresta conforme quantos amigos já têm cor.
+## Clima do cenário conforme quantos amigos já têm cor.
 func aplicar_clima(nivel: int, duracao: float) -> void:
 	var alvo := {"saturacao": SATURACAO[nivel], "brilho": BRILHO[nivel], "vinheta": VINHETA[nivel]}
 	for parametro in alvo:
@@ -139,13 +177,16 @@ func aplicar_clima(nivel: int, duracao: float) -> void:
 		var de: float = vento.saturacao
 		create_tween().tween_method(func(v: float):
 			vento.definir_cor(v)
-			coruja.definir_saturacao(v)
+			ajudante.definir_saturacao(v)
 			for nome in animais:
 				animais[nome].definir_saturacao(v)
 		, de, SATURACAO[nivel], maxf(duracao, 0.01))
-		nuvem.humor(nivel, TOTAL)
-		coruja.humor(nivel, TOTAL)
-		nuvem.ir_para(POSICAO_NUVEM[nivel], maxf(duracao, 0.01))
+		nuvem.humor(nivel, total)
+		ajudante.humor(nivel, total)
+		nuvem.ir_para(posicao_nuvem[nivel], maxf(duracao, 0.01))
+	if sol:
+		var k := float(nivel) / total
+		create_tween().tween_property(sol, "modulate:a", 0.12 + 0.25 * k if nivel < total else 0.85, maxf(duracao, 0.01))
 	if musica:
 		create_tween().tween_property(musica, "pitch_scale", 0.94 + 0.02 * nivel, maxf(duracao, 0.01))
 
@@ -210,14 +251,14 @@ func montar_interface() -> void:
 	textos.custom_minimum_size = Vector2(420, 0)
 	linha.add_child(textos)
 	textos.add_child(rotulo("A Magia das Cores", 28, Color("#5b3f8c")))
-	capitulo_label = rotulo("Floresta Encantada", 17)
+	capitulo_label = rotulo(cenario["titulo"], 17)
 	textos.add_child(capitulo_label)
 	status = rotulo("Olho Mágico: acordando...", 15, Color("#7a6f62"))
 	textos.add_child(status)
-	for i in range(TOTAL):
+	for i in range(total):
 		var icone := TextureRect.new()
-		icone.texture = animais[NOMES[i]].textura
-		icone.material = animais[NOMES[i]].material_icone()
+		icone.texture = animais[nomes[i]].textura
+		icone.material = animais[nomes[i]].material_icone()
 		icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icone.custom_minimum_size = Vector2(52, 52)
@@ -234,9 +275,10 @@ func montar_interface() -> void:
 	ouvir.pressed.connect(func():
 		if animando:
 			return
-		narrador.falar(["final_1", "final_2"] if etapa == TOTAL else ["cap_" + NOMES[etapa]])
+		narrador.falar(cenario["final"] if etapa == total else ["cap_" + nomes[etapa]])
 	)
 	controles_aventura.add_child(ouvir)
+	controles_aventura.add_child(botao_menu(15))
 	var som := botao("Música: ligada", Color("#4f9fd6"), 15)
 	som.pressed.connect(func():
 		musica.stream_paused = not musica.stream_paused
@@ -244,13 +286,13 @@ func montar_interface() -> void:
 	)
 	controles_aventura.add_child(som)
 
-	for i in range(TOTAL):
+	for i in range(total):
 		var placa := painel()
 		placa.position = Vector2(POSICAO_ANIMAIS[i] - 112, 484)
 		placa.size = Vector2(224, 44)
 		placa.pivot_offset = Vector2(112, 22)
 		tela.add_child(placa)
-		var nome_label := rotulo(ROTULOS[i], 18)
+		var nome_label := rotulo(rotulos[i], 18)
 		nome_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		placa.add_child(nome_label)
 		placas.append(placa)
@@ -287,10 +329,10 @@ func montar_introducao(tela: CanvasLayer) -> void:
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 14)
 	margem.add_child(coluna)
-	var titulo := rotulo("A Floresta Encantada", 32, Color("#5b3f8c"))
+	var titulo := rotulo(cenario.get("titulo_intro", cenario["titulo"]), 32, Color("#5b3f8c"))
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	coluna.add_child(titulo)
-	for chave in ["intro_1", "intro_2", "intro_3"]:
+	for chave in cenario["intro"]:
 		var p := rotulo(narrador.texto(chave), 20)
 		p.modulate.a = 0.45
 		coluna.add_child(p)
@@ -301,7 +343,8 @@ func montar_introducao(tela: CanvasLayer) -> void:
 	botoes.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	coluna.add_child(botoes)
 	var repetir := botao("Ouvir a história", Color("#7b5fc7"), 20)
-	repetir.pressed.connect(func(): narrador.falar(["intro_1", "intro_2", "intro_3"]))
+	repetir.pressed.connect(func(): narrador.falar(cenario["intro"]))
+	botoes.add_child(botao_menu(20))
 	botoes.add_child(repetir)
 	var comecar := botao("Vamos pintar!", Color("#4caf50"), 24)
 	comecar.pressed.connect(iniciar_aventura)
@@ -311,21 +354,35 @@ func montar_introducao(tela: CanvasLayer) -> void:
 	pulsar.tween_property(comecar, "scale", Vector2(1.06, 1.06), 0.6).set_trans(Tween.TRANS_SINE)
 	pulsar.tween_property(comecar, "scale", Vector2.ONE, 0.6).set_trans(Tween.TRANS_SINE)
 
+## Volta ao carrossel de cenários.
+func botao_menu(tamanho: int) -> Button:
+	var b := botao("Cenários", Color("#e0904a"), tamanho)
+	b.pressed.connect(voltar_ao_menu)
+	return b
+
+func voltar_ao_menu() -> void:
+	narrador.parar()
+	get_tree().change_scene_to_file(MENU)
+
 func _ao_narrar(chave: String, texto: String) -> void:
 	for c in paragrafos:
 		create_tween().tween_property(paragrafos[c], "modulate:a", 1.0 if c == chave else 0.45, 0.3)
-	if not chave.begins_with("intro"):
+	if not chave in cenario["intro"]:
 		legenda.text = texto
 		legenda.modulate.a = 0.0
 		create_tween().tween_property(legenda, "modulate:a", 1.0, 0.3)
 
 func _ao_terminar_fala() -> void:
-	if iniciada and etapa < TOTAL and not animando and not cutucados.has(etapa):
+	if iniciada and etapa < total and not animando and not cutucados.has(etapa):
 		espera.start(ESPERA_CUTUCAR)
 
 ## Tecla K: simula a câmera lendo o cartão do animal da vez, pintado com a cor pedida.
 ## Antes de começar, inicia a aventura; depois do final, repinta um amigo qualquer.
 func _unhandled_input(evento: InputEvent) -> void:
+	if evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		voltar_ao_menu()
+		return
 	if not (evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_K):
 		return
 	get_viewport().set_input_as_handled()
@@ -334,17 +391,17 @@ func _unhandled_input(evento: InputEvent) -> void:
 		return
 	if animando:
 		return
-	if etapa < TOTAL:
-		processar_animais([{"nome": NOMES[etapa], "cores": [COR_PEDIDA[etapa]]}])
+	if etapa < total:
+		processar_animais([{"nome": nomes[etapa], "cores": [cor_pedida[etapa]]}])
 		return
 	var paleta: Array = CORES.keys()
 	paleta.shuffle()
-	processar_animais([{"nome": NOMES.pick_random(), "cores": paleta.slice(0, randi_range(1, 3))}])
+	processar_animais([{"nome": nomes.pick_random(), "cores": paleta.slice(0, randi_range(1, 3))}])
 
 func cutucar() -> void:
-	if iniciada and etapa < TOTAL and not animando and not narrador.falando:
+	if iniciada and etapa < total and not animando and not narrador.falando:
 		cutucados[etapa] = true
-		narrador.falar(["espera_" + NOMES[etapa]])
+		narrador.falar(["espera_" + nomes[etapa]])
 
 # ---------------------------------------------------------------- áudio
 
@@ -385,32 +442,32 @@ func iniciar_aventura() -> void:
 	controles_aventura.show()
 	painel_legenda.show()
 	atualizar_capitulo()
-	narrador.falar(["cap_" + NOMES[etapa]])
+	narrador.falar(["cap_" + nomes[etapa]])
 	avancar_pendentes()
 
 func atualizar_capitulo() -> void:
-	for i in range(TOTAL):
-		var animal: Node2D = animais[NOMES[i]]
+	for i in range(total):
+		var animal: Node2D = animais[nomes[i]]
 		animal.em_destaque = i == etapa
 		var vez := i == etapa
 		create_tween().tween_property(animal, "modulate", Color.WHITE if (vez or i < etapa) else Color(0.72, 0.72, 0.8), 0.6)
 		create_tween().tween_property(placas[i], "scale", Vector2(1.1, 1.1) if vez else Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK)
 		var estilo: StyleBoxFlat = placas[i].get_theme_stylebox("panel")
 		estilo.border_color = Color("#f2b632") if vez else (Color("#79c968") if i < etapa else Color("#dccb9e"))
-	if etapa == TOTAL:
-		capitulo_label.text = "Fim: a Floresta Encantada voltou a ser colorida!"
+	if etapa == total:
+		capitulo_label.text = cenario["fim"]
 		status.text = "Olho Mágico: vocês conseguiram!"
 		return
-	capitulo_label.text = "Capítulo %d de %d · %s" % [etapa + 1, TOTAL, TITULOS[etapa]]
-	status.text = "Olho Mágico: esperando %s..." % PEDIDOS[etapa]
+	capitulo_label.text = "Capítulo %d de %d · %s" % [etapa + 1, total, titulos[etapa]]
+	status.text = "Olho Mágico: esperando %s..." % pedidos[etapa]
 
 func avancar_pendentes() -> void:
 	if not iniciada or animando:
 		return
 	animando = true
 	espera.stop()
-	while etapa < TOTAL and pendentes.has(NOMES[etapa]):
-		var nome: String = NOMES[etapa]
+	while etapa < total and pendentes.has(nomes[etapa]):
+		var nome: String = nomes[etapa]
 		var cores: Array = pendentes[nome]
 		pendentes.erase(nome)
 		pintados[nome] = cores
@@ -419,14 +476,14 @@ func avancar_pendentes() -> void:
 		etapa += 1
 		aplicar_clima(etapa, 2.5)
 		atualizar_capitulo()
-		if etapa == TOTAL:
-			narrador.falar(["festa_" + nome, "final_1", "final_2"])
+		if etapa == total:
+			narrador.falar(["festa_" + nome] + cenario["final"])
 			grande_final()
-		elif pendentes.has(NOMES[etapa]):
+		elif pendentes.has(nomes[etapa]):
 			narrador.falar(["festa_" + nome])
 			await esperar_narrador(12.0)
 		else:
-			narrador.falar(["festa_" + nome, "cap_" + NOMES[etapa]])
+			narrador.falar(["festa_" + nome, "cap_" + nomes[etapa]])
 	animando = false
 
 func esperar_narrador(limite: float) -> void:
@@ -434,7 +491,7 @@ func esperar_narrador(limite: float) -> void:
 	while narrador.falando and Time.get_ticks_msec() - inicio < limite * 1000.0:
 		await get_tree().create_timer(0.2).timeout
 
-## A Coruja bate as asas e solta a cor, que voa até o animal e explode nele.
+## O ajudante (Coruja ou Galo) bate as asas e solta a cor, que voa até o animal e explode nele.
 func transformar(nome: String, cores_nomes: Array) -> void:
 	narrador.parar()
 	var cores: Array = []
@@ -442,13 +499,13 @@ func transformar(nome: String, cores_nomes: Array) -> void:
 		cores.append(Color(CORES[c]))
 	var animal: Node2D = animais[nome]
 	sopro.play()
-	var origem: Vector2 = coruja.soltar_cor()
+	var origem: Vector2 = ajudante.soltar_cor()
 	await get_tree().create_timer(0.35).timeout
 	await voar_cor(origem, animal.global_position + Vector2(0, -20), cores)
 	magia.play()
 	efeito.play()
 	await animal.colorir(cores)
-	var i := NOMES.find(nome)
+	var i := nomes.find(nome)
 	icones[i].material = animal.material_icone()
 	var tw := create_tween()
 	icones[i].pivot_offset = Vector2(27, 27)
@@ -493,7 +550,7 @@ func voar_cor(origem: Vector2, destino: Vector2, cores: Array) -> void:
 	await tw.finished
 	rastro.emitting = false
 	luz.hide()
-	get_tree().create_timer(1.0).timeout.connect(bola.queue_free)
+	create_tween().tween_callback(bola.queue_free).set_delay(1.0)
 
 func grande_final() -> void:
 	espera.stop()
@@ -521,11 +578,16 @@ func grande_final() -> void:
 	confete.color_initial_ramp = Tex.gradiente(cores)
 	add_child(confete)
 	confete.emitting = true
-	get_tree().create_timer(7.0).timeout.connect(func(): confete.emitting = false)
-	coruja.bater_asas(2.5)
-	for i in range(TOTAL):
-		animais[NOMES[i]].festejar(0.8 + i * 0.35)
-		animais[NOMES[i]].em_destaque = false
+	create_tween().tween_callback(func(): confete.emitting = false).set_delay(7.0)
+	ajudante.bater_asas(2.5)
+	if sol:
+		# O sol volta a brilhar: pulsa devagar.
+		var brilha := create_tween().set_loops()
+		brilha.tween_property(sol, "scale", Vector2.ONE * 3.1, 1.6).set_trans(Tween.TRANS_SINE)
+		brilha.tween_property(sol, "scale", Vector2.ONE * 2.6, 1.6).set_trans(Tween.TRANS_SINE)
+	for i in range(total):
+		animais[nomes[i]].festejar(0.8 + i * 0.35)
+		animais[nomes[i]].em_destaque = false
 
 # ---------------------------------------------------------------- leituras da câmera
 
@@ -566,7 +628,7 @@ func processar_animais(desenhos: Array) -> void:
 		if not item is Dictionary:
 			continue
 		var nome := sem_acento(str(item.get("nome", "")).strip_edges().to_lower())
-		if not nome in NOMES:
+		if not nome in nomes:
 			continue
 		var recebidas: Variant = item.get("cores", [])
 		if not recebidas is Array:

@@ -63,6 +63,20 @@ static func moita() -> Texture2D:
 		flores += '<g transform="translate(%d %d)"><circle fill="%s" stroke="#302c35" stroke-width="2" cx="0" cy="-5" r="5"/><circle fill="%s" stroke="#302c35" stroke-width="2" cx="5" cy="1" r="5"/><circle fill="%s" stroke="#302c35" stroke-width="2" cx="-5" cy="1" r="5"/><circle fill="#ffd34d" cx="0" cy="-1" r="3"/></g>' % [f[0], f[1], f[2], f[2], f[2]]
 	return _guardado("moita", '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="156" viewBox="0 0 280 156"><g fill="#302c35" stroke="#302c35" stroke-width="7">%s%s</g><g fill="#74c661">%s%s</g><g fill="#a6e487" opacity="0.85">%s</g>%s</svg>' % [contorno, base, miolo, base, brilhos, flores])
 
+## Fardo de feno onde os animais da fazenda se escondem (mesmo tamanho da moita).
+static func feno() -> Texture2D:
+	# Contorno ondulado (palha despenteada) em vez de uma caixa reta.
+	var borda := "M30 150 L22 60 Q14 34 34 30 "
+	for x in range(46, 250, 16):
+		borda += "Q%d %d %d %d " % [x - 4, 14 if (x / 16) % 2 == 0 else 22, x + 8, 28]
+	borda += "Q266 34 258 60 L250 150 Z"
+	var palha := ""
+	for i in range(40):
+		var x := 34 + (i * 53) % 214
+		var y := 44 + (i * 37) % 96
+		palha += "M%d %d q%d %d %d %d " % [x, y, 9, -3 + (i % 3) * 3, 18, (i % 5) - 2]
+	return _guardado("feno", '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="156" viewBox="0 0 280 156"><g stroke="#302c35" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"><path fill="#f0c95a" d="%s"/></g><path fill="#f8dd84" opacity="0.9" d="M40 40 Q140 30 240 40 L238 62 Q140 52 42 62 Z"/><path fill="none" stroke="#c99a2e" stroke-width="3" stroke-linecap="round" d="%s"/><path fill="#d9a93c" opacity="0.55" d="M30 120 Q140 132 250 120 L250 146 L30 146 Z"/><g stroke="#302c35" stroke-width="4"><path fill="#b5572c" d="M86 26 Q92 90 88 150 L102 150 Q106 90 100 24 Z M178 24 Q172 90 176 150 L190 150 Q194 90 192 26 Z"/></g></svg>' % [borda, palha])
+
 static func gradiente(cores: Array) -> Gradient:
 	var g := Gradient.new()
 	if cores.is_empty():

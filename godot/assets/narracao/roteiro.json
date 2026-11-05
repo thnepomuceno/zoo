@@ -2,23 +2,35 @@
   "intro_1": "Certa manhã, a Floresta Encantada amanheceu toda cinzenta! O vento forte durante a madrugada havia levado todas as cores. E os animais, com medo, esconderam-se atrás da vegetação!",
   "intro_2": "Então, a sábia Coruja resolveu pedir ajuda para que as cores voltassem a encantar a floresta. Ela vai precisar de nós para isso. Vamos ajudá-la?",
   "intro_3": "Precisaremos de uma onça amarela, um macaco marrom, um tamanduá preto e uma borboleta vermelha. Junto com o professor, pinte cada cartão e mostre ao Olho Mágico. Os animais vão sair do esconderijo, um a um!",
-
   "cap_onca": "A Coruja ouviu um barulhinho atrás daquela moita. É a onça, tremendo de medo! Para sair do esconderijo, ela precisa da sua cor. Pinte a onça de amarelo e mostre ao Olho Mágico.",
   "espera_onca": "A onça ainda está escondidinha, espiando por entre as folhas. Capriche no amarelo e mostre o cartão ao Olho Mágico!",
   "festa_onca": "Olhem só! A onça pulou para fora da moita, toda pintadinha! E a grama começou a ganhar cor!",
-
   "cap_macaco": "E quem está chacoalhando aquela outra moita? É o macaco! Ele quer pular de galho em galho, mas sem cor não tem coragem. Pinte o macaco de marrom e mostre ao Olho Mágico!",
   "espera_macaco": "O macaco continua esperando atrás das folhas, coçando a cabeça. Pinte o macaco de marrom e mostre ao Olho Mágico!",
   "festa_macaco": "Uhu! O macaco saiu dando cambalhota de tanta alegria! As árvores estão ficando verdinhas outra vez!",
-
   "cap_tamandua": "Psiu... vejam aquele focinho comprido aparecendo! É o tamanduá, bem tímido. Pinte o tamanduá de preto e mostre ao Olho Mágico.",
   "espera_tamandua": "O tamanduá continua escondido, só com o focinho de fora. Ele está contando com vocês!",
   "festa_tamandua": "Que lindo! O tamanduá saiu balançando o rabo peludo! A floresta está quase toda colorida!",
-
   "cap_borboleta": "Falta só uma amiga: a borboleta, escondida entre as flores. Sem cor, ela não consegue voar! Pinte a borboleta de vermelho e mostre ao Olho Mágico!",
   "espera_borboleta": "A borboleta está com as asinhas fechadas, esperando sua cor. Ajudem a borboleta a voar!",
   "festa_borboleta": "A borboleta abriu as asas e saiu voando! Que beleza!",
-
   "final_1": "Todos os animais apareceram! A sábia Coruja bateu as asas de alegria, e as cores voltaram a encantar a floresta.",
-  "final_2": "A Floresta Encantada voltou a ser toda colorida! Obrigada, pintores: vocês salvaram a floresta!"
+  "final_2": "A Floresta Encantada voltou a ser toda colorida! Obrigada, pintores: vocês salvaram a floresta!",
+  "fazenda_intro_1": "Certa manhã, a Fazenda Feliz amanheceu sem cores! A tempestade forte durante a madrugada havia levado todas as cores, restando apenas o cinza do tempo nublado. Nem o sol conseguia brilhar por trás das nuvens!",
+  "fazenda_intro_2": "Os animais, com receio, esconderam-se nos quatro cantos da fazenda. Então, o sábio Galo resolveu pedir ajuda para que as cores voltassem a encantar a fazenda. Ele vai precisar de nós para isso. Vamos ajudá-lo?",
+  "fazenda_intro_3": "Precisaremos de um cavalo marrom, um porco rosa, um pato amarelo e uma galinha laranja. Junto com o professor, pinte cada cartão e mostre ao Olho Mágico. Os animais vão sair do esconderijo, um a um!",
+  "cap_cavalo": "Cocoricó! O Galo ouviu um relincho baixinho atrás daquele fardo de feno. É o cavalo, tremendo de medo! Para sair do esconderijo, ele precisa da sua cor. Pinte o cavalo de marrom e mostre ao Olho Mágico.",
+  "espera_cavalo": "O cavalo ainda está escondido atrás do feno, só com as orelhas de fora. Capriche no marrom e mostre o cartão ao Olho Mágico!",
+  "festa_cavalo": "Olhem só! O cavalo saiu trotando, todo marrom! E o pasto começou a ganhar cor!",
+  "cap_porco": "E quem está fazendo óinc, óinc atrás do outro fardo? É o porquinho! Ele quer brincar na lama, mas sem cor não tem coragem. Pinte o porco de rosa e mostre ao Olho Mágico!",
+  "espera_porco": "O porquinho continua escondido, balançando o rabinho enrolado. Pinte o porco de rosa e mostre ao Olho Mágico!",
+  "festa_porco": "Óinc, óinc! O porco saiu pulando de alegria, rosinha que só! O celeiro está ficando vermelho outra vez!",
+  "cap_pato": "Quá, quá... um biquinho apareceu ali! É o pato, bem tímido, com saudade de nadar na lagoa. Pinte o pato de amarelo e mostre ao Olho Mágico.",
+  "espera_pato": "O pato continua escondido, esperando a sua cor para nadar na lagoa. Ele está contando com vocês!",
+  "festa_pato": "Que lindo! O pato saiu batendo as asas, amarelinho! A lagoa já está azul de novo!",
+  "cap_galinha": "Falta só uma amiga: a galinha, escondida no último cantinho da fazenda. Sem cor, ela nem consegue ciscar! Pinte a galinha de laranja e mostre ao Olho Mágico!",
+  "espera_galinha": "A galinha está encolhidinha atrás do feno, esperando sua cor. Ajudem a galinha a sair!",
+  "festa_galinha": "Có, có, có! A galinha saiu ciscando, toda laranja! Que beleza!",
+  "fazenda_final_1": "Todos os animais apareceram! O sábio Galo cantou bem alto, as nuvens foram embora e o sol voltou a brilhar!",
+  "fazenda_final_2": "A Fazenda Feliz voltou a ser toda colorida! Obrigado, pintores: vocês salvaram a fazenda!"
 }

@@ -1,6 +1,7 @@
 extends Node2D
-## Um animal da Floresta Encantada. Começa cinza, escondido atrás de uma moita,
-## espiando com medo. Quando recebe as cores do cartão pintado, sai do esconderijo.
+## Um animal de um cenário. Começa cinza, escondido atrás de uma moita (floresta) ou de um
+## fardo de feno (fazenda), espiando com medo. Quando recebe as cores do cartão pintado,
+## sai do esconderijo.
 
 const Tex := preload("res://godot/scenes/texturas.gd")
 const SHADER_PINTURA := preload("res://godot/shaders/pintura.gdshader")
@@ -16,10 +17,20 @@ const DADOS := {
 	"macaco": {"tamanho": 250.0, "espiar": 0.45, "olhos": [Vector2(0.33, 0.25), Vector2(0.5, 0.25)], "pulo": 22.0, "ritmo": 4.0, "balanco": 0.12, "voo": 0.0},
 	"tamandua": {"tamanho": 262.0, "espiar": 0.5, "olhos": [Vector2(0.63, 0.2)], "pulo": 7.0, "ritmo": 2.0, "balanco": 0.04, "voo": 0.0},
 	"borboleta": {"tamanho": 205.0, "espiar": 0.5, "olhos": [Vector2(0.47, 0.27), Vector2(0.53, 0.27)], "pulo": 14.0, "ritmo": 1.6, "balanco": 0.06, "voo": 46.0},
+	"cavalo": {"tamanho": 250.0, "espiar": 0.45, "olhos": [Vector2(0.11, 0.26), Vector2(0.24, 0.25)], "pulo": 14.0, "ritmo": 3.2, "balanco": 0.05, "voo": 0.0},
+	"porco": {"tamanho": 225.0, "espiar": 0.5, "olhos": [Vector2(0.21, 0.39), Vector2(0.52, 0.39)], "pulo": 10.0, "ritmo": 3.0, "balanco": 0.06, "voo": 0.0},
+	"pato": {"tamanho": 225.0, "espiar": 0.5, "olhos": [Vector2(0.61, 0.21), Vector2(0.79, 0.21)], "pulo": 12.0, "ritmo": 3.6, "balanco": 0.09, "voo": 0.0},
+	"galinha": {"tamanho": 240.0, "espiar": 0.45, "olhos": [Vector2(0.16, 0.19), Vector2(0.28, 0.19)], "pulo": 10.0, "ritmo": 4.2, "balanco": 0.07, "voo": 0.0},
+}
+## Esconderijos: textura e as cores do que voa quando o animal sai.
+const ESCONDERIJOS := {
+	"moita": ["#5fae4f", "#86cf6a", "#3f8a3a"],
+	"feno": ["#e8c35f", "#f3d98a", "#c9a03f"],
 }
 
 var nome: String
 var dados: Dictionary
+var esconderijo := "moita"
 var feliz := false
 var escondido := true
 var em_destaque := false
@@ -40,8 +51,9 @@ var sombra: Sprite2D
 var holofote: Sprite2D
 var moita: Sprite2D
 
-func configurar(nome_animal: String) -> void:
+func configurar(nome_animal: String, tipo_esconderijo: String = "moita") -> void:
 	nome = nome_animal
+	esconderijo = tipo_esconderijo
 	dados = DADOS[nome]
 	textura = load("res://godot/assets/animais/%s.png" % nome)
 	regioes = load("res://godot/assets/animais/%s_regioes.png" % nome)
@@ -81,7 +93,7 @@ func configurar(nome_animal: String) -> void:
 
 	# A moita fica na frente do corpo enquanto ele está escondido.
 	moita = Sprite2D.new()
-	moita.texture = Tex.moita()
+	moita.texture = Tex.feno() if esconderijo == "feno" else Tex.moita()
 	var largura := maxf(tam.x * escala * 1.02, 225.0)
 	moita.scale = Vector2(1.0, 0.82) * largura / 280.0
 	moita.offset = Vector2(0, -78) # pivô na base, para chacoalhar pelo pé
@@ -285,7 +297,7 @@ func explodir(cores: Array) -> void:
 	tw.tween_property(anel, "modulate:a", 0.0, 0.7)
 	tw.chain().tween_callback(anel.queue_free)
 
-## Folhas que voam da moita quando o animal sai.
+## Folhas (ou palha) que voam do esconderijo quando o animal sai.
 func folhas_voando() -> void:
 	var p := _particulas(Tex.folha(), 22, 1.6)
 	p.position = Vector2(0, topo_moita + 30.0)
@@ -298,7 +310,10 @@ func folhas_voando() -> void:
 	p.angular_velocity_max = 400
 	p.scale_amount_min = 0.9
 	p.scale_amount_max = 1.6
-	p.color_initial_ramp = Tex.gradiente([Color("#5fae4f"), Color("#86cf6a"), Color("#3f8a3a")])
+	var cores: Array = []
+	for c in ESCONDERIJOS[esconderijo]:
+		cores.append(Color(c))
+	p.color_initial_ramp = Tex.gradiente(cores)
 
 func coracoes() -> void:
 	var p := _particulas(Tex.coracao(), 6, 2.2)

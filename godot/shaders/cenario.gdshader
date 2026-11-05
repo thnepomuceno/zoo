@@ -1,18 +1,22 @@
 shader_type canvas_item;
-// Fundo vivo: copas balançando ao vento, grama ondulando e a cor que some/volta.
+// Fundo vivo de qualquer cenário: copas balançando ao vento, grama ondulando, água
+// tremendo e a cor que some/volta.
 
 uniform float saturacao : hint_range(0.0, 1.0) = 0.0;
 uniform float brilho : hint_range(0.0, 1.5) = 0.8;
 uniform float vinheta : hint_range(0.0, 1.0) = 0.5;
 uniform float vento : hint_range(0.0, 3.0) = 1.0;
 uniform float rajada : hint_range(0.0, 2.0) = 0.0; // pico curto, animado pelo script
+uniform float copas : hint_range(0.0, 1.0) = 1.0; // 0 = nada balança no alto (ex.: celeiro)
+uniform vec2 centro_lago = vec2(0.83, 0.835);
+uniform vec2 raio_lago = vec2(0.13, 0.055);
 
 void fragment() {
 	vec2 uv = UV;
 	float forca = vento * (0.7 + 0.3 * sin(TIME * 0.45)) + rajada;
 
 	// Copas: quanto mais alto, mais balança. Troncos e chão ficam firmes.
-	float copa = 1.0 - smoothstep(0.22, 0.62, uv.y);
+	float copa = (1.0 - smoothstep(0.22, 0.62, uv.y)) * copas;
 	float onda = sin(TIME * 1.7 + uv.y * 9.0 + uv.x * 5.0) * 0.0045
 		+ sin(TIME * 2.9 + uv.x * 14.0 + uv.y * 3.0) * 0.0018;
 	uv.x += onda * copa * forca;
@@ -23,7 +27,7 @@ void fragment() {
 	uv.x += sin(TIME * 2.4 + uv.x * 38.0 + uv.y * 16.0) * 0.0022 * grama * forca;
 
 	// Espelho d'água do lago tremendo de leve.
-	vec2 lago = (uv - vec2(0.83, 0.835)) / vec2(0.13, 0.055);
+	vec2 lago = (uv - centro_lago) / raio_lago;
 	float agua = 1.0 - smoothstep(0.7, 1.0, length(lago));
 	uv.y += sin(TIME * 3.0 + uv.x * 90.0) * 0.0012 * agua;
 

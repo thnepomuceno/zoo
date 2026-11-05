@@ -1,8 +1,11 @@
-# A Magia das Cores: Floresta Encantada
+# A Magia das Cores
 
-Abra o project.godot da raiz no Godot e execute a cena principal.
+Abra o project.godot da raiz no Godot e execute a cena principal. Ela abre o **carrossel** com os 4 cenários da especificação "MESA EDUCACIONAL - A magia das cores". Use as setas (ou ← →, ou 1 a 4) e clique em **Jogar!** (ou Enter). A Lagoa Cristalina e a Aventura Marinha aparecem como "Em breve". Na aventura, o botão **Cenários** (ou Esc) volta ao carrossel. Para abrir um cenário direto: `-- --cenario=fazenda`.
 
-O fundo existente foi mantido. A onça, o macaco, o tamanduá e a borboleta começam cinza, escondidos atrás das moitas. A história segue a especificação "MESA EDUCACIONAL - A magia das cores" (cenário 1, Floresta Encantada). Ela aparece na abertura e é narrada.
+- **1 · Floresta Encantada:** a onça, o macaco, o tamanduá e a borboleta começam cinza, escondidos atrás das moitas. A sábia Coruja pede ajuda.
+- **2 · Fazenda Feliz:** a tempestade levou as cores e a nuvem triste cobre o sol. O cavalo marrom, o porco rosa, o pato amarelo e a galinha laranja estão escondidos atrás dos fardos de feno, e o sábio Galo pede ajuda em cima da cerca. A cada animal, a nuvem se afasta do sol e fica mais alegre. No final, ela sorri e o sol volta a brilhar.
+
+Os cenários (história, animais, ajudante e posições) ficam em `godot/scenes/cenarios.gd`. A história aparece na abertura e é narrada.
 
 ## Entrada da câmera
 
@@ -23,6 +26,8 @@ Formato aceito:
 }
 ```
 
+Na Fazenda Feliz os nomes são `cavalo`, `porco`, `pato` e `galinha`. Cada cenário ignora os nomes dos outros.
+
 `desenhos: []` é válido e não apaga os animais já pintados. Reinicie o jogo com os arquivos vazios para começar uma nova atividade. Os nomes identificam os animais, com ou sem acento (`onça` ou `onca`, `tamanduá` ou `tamandua`). Os IDs não precisam coincidir com a folha impressa. Não é necessário enviar `validado`.
 
 São aceitas até três cores. A primeira pinta a maior parte do animal e as outras se alternam nas demais regiões. Como o JSON não informa qual região recebeu cada cor, a posição é aproximada. Qualquer cor é aceita; a narração pede a cor da especificação.
@@ -32,6 +37,7 @@ Os desenhos na tela são os mesmos dos cartões impressos (`floresta_encantada_8
 ```
 pip install pypdf pillow numpy scipy
 python tools/preparar_animais.py floresta_encantada_8x8_4_na_folha_v2.pdf macaco borboleta tamandua onca
+python tools/preparar_animais.py fazenda_feliz_8x8_4_na_folha.pdf cavalo porco pato galinha
 ```
 
 Cores: bege, amarelo, laranja, verde, azul, marrom, rosa, roxo, vermelho, branco, preto e cinza. Leituras desconhecidas ou incompletas são ignoradas. Arquivos com JSON ainda em gravação são tentados novamente. Recomenda-se gravar em arquivo temporário e renomeá-lo para `.json` ao terminar.
@@ -42,7 +48,7 @@ A leitura funciona enquanto o aplicativo está aberto. A captura e o reconhecime
 A aventura segue a ordem **onça amarela → macaco marrom → tamanduá preto → borboleta vermelha**. O vento forte da madrugada levou as cores da Floresta Encantada, e os animais, com medo, esconderam-se atrás da vegetação. A sábia Coruja pede ajuda às crianças.
 
 - **Começo dramático:** a floresta está cinza e escura, uma nuvem carregada cobre o sol e chove de leve. Cada animal espia por cima da sua moita, treme, se abaixa e solta gotinhas de medo. O animal da vez fica iluminado e a moita dele chacoalha.
-- **Cenário vivo:** as copas das árvores e a grama balançam com o vento (shader `godot/shaders/floresta.gdshader`), rajadas aparecem de vez em quando, folhas voam e o lago treme. A Coruja pisca e balança no galho.
+- **Cenário vivo:** as copas das árvores e a grama balançam com o vento (shader `godot/shaders/cenario.gdshader`), rajadas aparecem de vez em quando, folhas voam e o lago treme. A Coruja pisca e balança no galho.
 - **Transformação:** quando o JSON chega, a Coruja bate as asas e solta uma bola de cor que voa até o animal. A cor se espalha a partir do centro dele, com estrelas e tinta. A moita chacoalha e solta folhas, e o animal pula para fora do esconderijo e solta corações. A borboleta sai voando.
 - **A floresta revive:** a cada animal que aparece, o fundo, as moitas e a Coruja recuperam parte da cor. A nuvem clareia e se afasta do sol, e a música fica mais alegre. No final aparecem um arco-íris e confetes, todos fazem uma dancinha e a Coruja fica feliz.
 - Se o animal for pintado de novo, a cor é atualizada com uma nova explosão.

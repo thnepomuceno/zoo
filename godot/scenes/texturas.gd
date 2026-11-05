@@ -46,6 +46,23 @@ static func coracao() -> Texture2D:
 static func confete() -> Texture2D:
 	return _guardado("confete", '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><rect fill="#ffffff" width="10" height="6" rx="1"/></svg>')
 
+## Moita onde os animais se escondem (contorno só por fora, como nos cartões).
+static func moita() -> Texture2D:
+	var bolas := [[52, 104, 44], [104, 74, 54], [166, 70, 58], [222, 100, 48], [140, 108, 50], [28, 126, 28], [252, 128, 26]]
+	var contorno := ""
+	var miolo := ""
+	for b in bolas:
+		contorno += '<circle cx="%d" cy="%d" r="%d"/>' % b
+		miolo += '<circle cx="%d" cy="%d" r="%d"/>' % b
+	var base := '<rect x="10" y="112" width="260" height="38" rx="14"/>'
+	var brilhos := ""
+	for b in [[92, 58, 20, 11], [160, 50, 22, 12], [215, 86, 16, 9], [48, 92, 14, 8]]:
+		brilhos += '<ellipse cx="%d" cy="%d" rx="%d" ry="%d"/>' % b
+	var flores := ""
+	for f in [[70, 96, "#f49cbe"], [128, 64, "#ffe059"], [196, 84, "#ef6b65"], [236, 116, "#f49cbe"], [36, 124, "#ffe059"], [158, 116, "#ac86dc"]]:
+		flores += '<g transform="translate(%d %d)"><circle fill="%s" stroke="#302c35" stroke-width="2" cx="0" cy="-5" r="5"/><circle fill="%s" stroke="#302c35" stroke-width="2" cx="5" cy="1" r="5"/><circle fill="%s" stroke="#302c35" stroke-width="2" cx="-5" cy="1" r="5"/><circle fill="#ffd34d" cx="0" cy="-1" r="3"/></g>' % [f[0], f[1], f[2], f[2], f[2]]
+	return _guardado("moita", '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="156" viewBox="0 0 280 156"><g fill="#302c35" stroke="#302c35" stroke-width="7">%s%s</g><g fill="#74c661">%s%s</g><g fill="#a6e487" opacity="0.85">%s</g>%s</svg>' % [contorno, base, miolo, base, brilhos, flores])
+
 static func gradiente(cores: Array) -> Gradient:
 	var g := Gradient.new()
 	if cores.is_empty():

@@ -149,6 +149,7 @@ func montar_cartao(i: int) -> PanelContainer:
 func rotulo(texto: String, tamanho: int, cor: Color) -> Label:
 	var label := Label.new()
 	label.text = texto
+	label.uppercase = true
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", tamanho)
 	label.add_theme_color_override("font_color", cor)
@@ -157,7 +158,7 @@ func rotulo(texto: String, tamanho: int, cor: Color) -> Label:
 
 func botao(texto: String, cor: Color, tamanho: int) -> Button:
 	var b := Button.new()
-	b.text = texto
+	b.text = texto.to_upper()
 	b.add_theme_font_size_override("font_size", tamanho)
 	b.focus_mode = Control.FOCUS_NONE # as setas do teclado ficam para o carrossel
 	for estado in ["normal", "hover", "pressed", "focus"]:

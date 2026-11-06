@@ -195,6 +195,7 @@ func aplicar_clima(nivel: int, duracao: float) -> void:
 func rotulo(texto: String, tamanho: int = 24, cor: Color = Color("#302c35")) -> Label:
 	var label := Label.new()
 	label.text = texto
+	label.uppercase = true
 	label.add_theme_font_size_override("font_size", tamanho)
 	label.add_theme_color_override("font_color", cor)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -219,7 +220,7 @@ func painel(fundo_cor: Color = Color("#fff8e9"), borda: Color = Color("#dccb9e")
 
 func botao(texto: String, cor: Color, tamanho: int = 18) -> Button:
 	var b := Button.new()
-	b.text = texto
+	b.text = texto.to_upper()
 	b.add_theme_font_size_override("font_size", tamanho)
 	for estado in ["normal", "hover", "pressed", "focus"]:
 		var e := StyleBoxFlat.new()
@@ -282,7 +283,7 @@ func montar_interface() -> void:
 	var som := botao("Música: ligada", Color("#4f9fd6"), 15)
 	som.pressed.connect(func():
 		musica.stream_paused = not musica.stream_paused
-		som.text = "Música: pausada" if musica.stream_paused else "Música: ligada"
+		som.text = ("Música: pausada" if musica.stream_paused else "Música: ligada").to_upper()
 	)
 	controles_aventura.add_child(som)
 

@@ -10,6 +10,7 @@ uniform float rajada : hint_range(0.0, 2.0) = 0.0; // pico curto, animado pelo s
 uniform float copas : hint_range(0.0, 1.0) = 1.0; // 0 = nada balança no alto (ex.: celeiro)
 uniform vec2 centro_lago = vec2(0.83, 0.835);
 uniform vec2 raio_lago = vec2(0.13, 0.055);
+uniform float submerso : hint_range(0.0, 1.0) = 0.0; // fundo do mar: tudo ondula e a luz dança
 
 void fragment() {
 	vec2 uv = UV;
@@ -31,7 +32,14 @@ void fragment() {
 	float agua = 1.0 - smoothstep(0.7, 1.0, length(lago));
 	uv.y += sin(TIME * 3.0 + uv.x * 90.0) * 0.0012 * agua;
 
+	// Debaixo d'água a imagem inteira ondula devagar.
+	uv.x += sin(TIME * 1.1 + uv.y * 14.0) * 0.0022 * submerso * forca;
+	uv.y += sin(TIME * 0.9 + uv.x * 10.0) * 0.0014 * submerso;
+
 	vec4 c = texture(TEXTURE, clamp(uv, vec2(0.001), vec2(0.999)));
+	// Cáusticas: manchinhas de luz se mexendo, mais fortes perto da superfície.
+	float caustica = sin(uv.x * 46.0 + TIME * 1.6 + sin(uv.y * 30.0 + TIME)) * sin(uv.y * 38.0 - TIME * 1.2 + sin(uv.x * 24.0));
+	c.rgb += vec3(0.06, 0.08, 0.08) * smoothstep(0.55, 1.0, caustica) * submerso * (1.0 - uv.y * 0.6) * saturacao;
 
 	// Sem cor: cinza azulado e apagado. Com cor: vivo e quente.
 	float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));

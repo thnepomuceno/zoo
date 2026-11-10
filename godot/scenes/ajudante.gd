@@ -1,7 +1,8 @@
 extends Node2D
-## O ajudante sábio que pediu ajuda às crianças: a Coruja (floresta) ou o Galo (fazenda).
-## Fica no galho ou na cerca, pisca, se preocupa e, a cada cartão pintado,
-## bate as asas e manda a cor voando até o animal.
+## O ajudante sábio que pediu ajuda às crianças: a Coruja (floresta), o Galo (fazenda),
+## o Pato Sabido (lagoa) ou o Senhor Polvo (mar). Fica no galho, na cerca, boiando ou na pedra,
+## pisca, se preocupa e, a cada cartão pintado, bate as asas (ou os tentáculos) e manda a cor
+## voando até o animal. "acessorio" é desenhado por cima dos olhos (óculos, chapéu).
 
 const Tex := preload("res://godot/scenes/texturas.gd")
 const SHADER_DESBOTAR := preload("res://godot/shaders/desbotar.gdshader")
@@ -31,6 +32,32 @@ const DESENHOS := {
 		"ombro": Vector2(50, -6),
 		"escala": 0.6,
 	},
+	# Pato Sabido: amarelo, de óculos redondos, boiando na lagoa.
+	"pato": {
+		"tamanho": Vector2(170, 192),
+		"corpo": '<path fill="#ff993d" d="M44 178 Q62 166 80 178 Q62 190 44 178 Z M90 178 Q108 166 126 178 Q108 190 90 178 Z"/><ellipse fill="#ffe36b" cx="85" cy="128" rx="60" ry="52"/><ellipse fill="#fff3b0" cx="85" cy="142" rx="34" ry="30"/><path fill="#ffe36b" d="M80 26 Q76 4 94 8 Q86 16 92 26 Z"/><circle fill="#ffe36b" cx="85" cy="62" r="40"/><path fill="#ff993d" d="M62 80 Q85 70 108 80 Q102 98 85 98 Q68 98 62 80 Z"/><path fill="none" stroke-width="3" d="M65 83 Q85 90 105 83"/>',
+		"abertos": '<circle fill="#ffffff" cx="70" cy="56" r="10"/><circle fill="#ffffff" cx="100" cy="56" r="10"/><circle fill="#302c35" cx="71" cy="57" r="5.5"/><circle fill="#302c35" cx="99" cy="57" r="5.5"/><circle fill="#ffffff" stroke="none" cx="69" cy="54" r="2"/><circle fill="#ffffff" stroke="none" cx="97" cy="54" r="2"/>',
+		"fechados": '<path fill="none" d="M60 58 Q70 65 80 58 M90 58 Q100 65 110 58"/>',
+		"preocupada": '<path fill="none" stroke-width="4" d="M56 36 L80 32 M114 36 L90 32"/>',
+		"feliz": '<ellipse fill="#f4a8bd" stroke="none" opacity="0.8" cx="52" cy="76" rx="8" ry="5"/><ellipse fill="#f4a8bd" stroke="none" opacity="0.8" cx="118" cy="76" rx="8" ry="5"/>',
+		"acessorio": '<g fill="none" stroke-width="3.5"><circle cx="70" cy="56" r="15"/><circle cx="100" cy="56" r="15"/><path d="M84 55 Q85 51 86 55 M55 54 L46 50 M115 54 L124 50"/></g>',
+		"asa": '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="96" viewBox="0 0 52 96"><g stroke="#302c35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><path fill="#f5cf45" d="M26 4 Q48 26 44 64 Q38 92 26 92 Q14 92 8 64 Q4 26 26 4 Z"/><path fill="none" stroke-width="3" d="M16 56 Q26 64 36 56 M18 72 Q26 79 34 72"/></g></svg>',
+		"ombro": Vector2(54, 2),
+		"escala": 0.6,
+	},
+	# Senhor Polvo: roxo, de chapéu-coco, com dois tentáculos que acenam no lugar das asas.
+	"polvo": {
+		"tamanho": Vector2(170, 192),
+		"corpo": '<path fill="#b77fd6" d="M48 118 Q26 150 10 166 Q4 178 18 180 Q42 172 66 126 Z M66 128 Q56 164 48 182 Q50 192 62 186 Q76 160 84 130 Z M86 130 Q94 162 108 186 Q120 192 122 180 Q110 160 104 128 Z M104 126 Q128 172 152 180 Q166 178 160 166 Q144 152 122 118 Z"/><g fill="#f2c6ea" stroke="none"><circle cx="24" cy="170" r="3.5"/><circle cx="38" cy="158" r="3.5"/><circle cx="58" cy="176" r="3.5"/><circle cx="64" cy="160" r="3.5"/><circle cx="110" cy="176" r="3.5"/><circle cx="102" cy="160" r="3.5"/><circle cx="146" cy="170" r="3.5"/><circle cx="132" cy="158" r="3.5"/></g><path fill="#b77fd6" d="M26 100 Q20 22 85 18 Q150 22 144 100 Q142 136 85 138 Q28 136 26 100 Z"/><g fill="#9a62bf" stroke="none"><circle cx="52" cy="50" r="7"/><circle cx="120" cy="56" r="5"/><circle cx="40" cy="98" r="5"/><circle cx="132" cy="102" r="6"/></g>',
+		"abertos": '<ellipse fill="#ffffff" cx="66" cy="80" rx="14" ry="16"/><ellipse fill="#ffffff" cx="104" cy="80" rx="14" ry="16"/><circle fill="#302c35" cx="67" cy="82" r="7"/><circle fill="#302c35" cx="103" cy="82" r="7"/><circle fill="#ffffff" stroke="none" cx="64" cy="78" r="2.5"/><circle fill="#ffffff" stroke="none" cx="100" cy="78" r="2.5"/>',
+		"fechados": '<path fill="none" d="M52 82 Q66 90 80 82 M90 82 Q104 90 118 82"/>',
+		"preocupada": '<path fill="none" stroke-width="4" d="M50 58 L76 52 M120 58 L94 52"/><ellipse fill="#7a3f6f" cx="85" cy="114" rx="6" ry="5"/>',
+		"feliz": '<ellipse fill="#f4a8bd" stroke="none" opacity="0.8" cx="46" cy="104" rx="9" ry="5"/><ellipse fill="#f4a8bd" stroke="none" opacity="0.8" cx="124" cy="104" rx="9" ry="5"/><path fill="none" d="M70 108 Q85 124 100 108"/>',
+		"acessorio": '<path fill="#4a4652" d="M54 30 Q54 2 85 2 Q116 2 116 30 Z"/><path fill="#e0904a" stroke="none" d="M57 20 L113 20 L114 28 L56 28 Z"/><path fill="#4a4652" d="M36 32 Q85 22 134 32 Q85 42 36 32 Z"/>',
+		"asa": '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="100" viewBox="0 0 52 100"><g stroke="#302c35" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><path fill="#b77fd6" d="M14 4 Q40 6 38 38 Q36 66 46 86 Q42 98 30 92 Q16 70 18 40 Q20 22 8 14 Q4 4 14 4 Z"/></g><g fill="#f2c6ea"><circle cx="30" cy="30" r="3.5"/><circle cx="28" cy="48" r="3.5"/><circle cx="32" cy="66" r="3.5"/><circle cx="38" cy="82" r="3"/></g></svg>',
+		"ombro": Vector2(56, 18),
+		"escala": 0.62,
+	},
 }
 
 var tipo := "coruja"
@@ -52,7 +79,7 @@ func _ready() -> void:
 	var tam: Vector2 = desenho["tamanho"]
 	for r in ["preocupada", "feliz"]:
 		for aberto in [true, false]:
-			var miolo: String = desenho["corpo"] + desenho["abertos" if aberto else "fechados"] + desenho[r]
+			var miolo: String = desenho["corpo"] + desenho["abertos" if aberto else "fechados"] + desenho[r] + desenho.get("acessorio", "")
 			texturas[r + str(aberto)] = Tex.svg('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">%s</svg>' % [tam.x, tam.y, tam.x, tam.y, TRACO % miolo])
 	boneco = Node2D.new()
 	boneco.scale = Vector2.ONE * escala()

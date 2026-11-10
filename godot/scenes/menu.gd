@@ -1,7 +1,7 @@
 extends Control
 ## Carrossel com os 4 cenários da especificação "A Magia das Cores".
 ## Setas (ou ← →) trocam o cenário; "Jogar!" (ou Enter) abre a aventura escolhida.
-## Os cenários ainda sem desenhos aparecem como "Em breve".
+## Um cenário com "pronto": false aparece como "Em breve".
 
 const Cenarios := preload("res://godot/scenes/cenarios.gd")
 const SHADER_DESBOTAR := preload("res://godot/shaders/desbotar.gdshader")

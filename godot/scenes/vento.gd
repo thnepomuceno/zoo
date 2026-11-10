@@ -1,12 +1,14 @@
 extends Node2D
 ## Vento passando: fios de ar riscando a tela e folhas voando das árvores.
 ## Rajadas de vez em quando avisam o fundo (sinal `rajada`) para as copas balançarem mais.
+## Debaixo d'água (agua = true): bolhas subindo no lugar das folhas, sem os fios de vento.
 
 const Tex := preload("res://godot/scenes/texturas.gd")
 
 signal rajada(forca: float)
 
 var tamanho := Vector2(1152, 648)
+var agua := false
 var fios: Array = []
 var folhas: CPUParticles2D
 var pozinho: CPUParticles2D
@@ -36,6 +38,21 @@ func _ready() -> void:
 	folhas.scale_amount_max = 1.3
 	folhas.hue_variation_min = -0.06
 	folhas.hue_variation_max = 0.06
+	if agua:
+		folhas.texture = Tex.bolha()
+		folhas.amount = 30
+		folhas.lifetime = 7.0
+		folhas.position = Vector2(576, 600)
+		folhas.emission_rect_extents = Vector2(576, 40)
+		folhas.direction = Vector2(0, -1)
+		folhas.spread = 12
+		folhas.initial_velocity_min = 40
+		folhas.initial_velocity_max = 90
+		folhas.gravity = Vector2(0, -12)
+		folhas.angular_velocity_min = 0
+		folhas.angular_velocity_max = 0
+		folhas.scale_amount_min = 0.5
+		folhas.scale_amount_max = 1.4
 	add_child(folhas)
 
 	# Pólen dourado: só aparece quando a floresta recupera as cores.
@@ -57,8 +74,9 @@ func _ready() -> void:
 	pozinho.color = Color(1, 0.92, 0.55, 0.0)
 	add_child(pozinho)
 
-	for i in range(7):
-		fios.append(novo_fio(true))
+	if not agua:
+		for i in range(7):
+			fios.append(novo_fio(true))
 	definir_cor(0.0)
 
 func novo_fio(espalhado: bool) -> Dictionary:
@@ -76,7 +94,7 @@ func definir_cor(valor: float) -> void:
 	saturacao = valor
 	var cinza := Color(0.62, 0.64, 0.66)
 	var verde := Color(0.55, 0.82, 0.35)
-	folhas.color = cinza.lerp(verde, valor)
+	folhas.color = Color(0.85, 0.9, 1.0, 0.7).lerp(Color(1, 1, 1, 0.95), valor) if agua else cinza.lerp(verde, valor)
 	pozinho.color = Color(1, 0.92, 0.55, valor * 0.85)
 
 func _process(delta: float) -> void:
@@ -86,14 +104,15 @@ func _process(delta: float) -> void:
 	if proxima_rajada <= 0.0:
 		proxima_rajada = randf_range(6.0, 11.0)
 		rajada.emit(randf_range(0.8, 1.4))
-		for i in range(3):
-			fios.append(novo_fio(false))
+		if not agua:
+			for i in range(3):
+				fios.append(novo_fio(false))
 		folhas.speed_scale = 2.2
 		create_tween().tween_property(folhas, "speed_scale", 1.0, 2.5)
 	for fio in fios:
 		fio["x"] += fio["velocidade"] * delta * forca
 	fios = fios.filter(func(f): return f["x"] - f["comprimento"] < tamanho.x + 40)
-	while fios.size() < 6:
+	while not agua and fios.size() < 6:
 		fios.append(novo_fio(false))
 	queue_redraw()
 

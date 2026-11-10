@@ -35,6 +35,8 @@ var cor_pedida: Array
 var titulos: Array
 var total: int
 var posicao_nuvem: Array
+var apelidos: Dictionary
+var brilho: Array
 
 var etapa: int = 0
 var iniciada: bool = false
@@ -69,6 +71,18 @@ var introducao: Control
 var paragrafos: Dictionary = {}
 var icones: Array[TextureRect] = []
 var placas: Array[PanelContainer] = []
+var nomes_placas: Array[Label] = []
+
+# Etapa final: as crianças dão um nome para cada amigo, um de cada vez, pelo teclado.
+var nomeando := false
+var indice_nome := 0
+var nomes_dados: Array[String] = []
+var frases_nomes: Dictionary = {} # frase falada -> índice do animal
+var painel_nome: PanelContainer
+var pergunta: Label
+var campo: LineEdit
+var seta: Node2D
+var pulo_seta: Tween
 
 func _ready() -> void:
 	for argumento in OS.get_cmdline_user_args():
@@ -107,6 +121,8 @@ func carregar_cenario() -> void:
 	titulos = cenario["capitulos"]
 	total = nomes.size()
 	posicao_nuvem = cenario["nuvem"]
+	apelidos = cenario.get("apelidos", {})
+	brilho = cenario.get("brilho", BRILHO)
 
 func montar_cenario() -> void:
 	var imagem: TextureRect = $Cenario
@@ -116,6 +132,7 @@ func montar_cenario() -> void:
 	fundo.set_shader_parameter("copas", cenario["copas"])
 	fundo.set_shader_parameter("centro_lago", cenario["lago"][0])
 	fundo.set_shader_parameter("raio_lago", cenario["lago"][1])
+	fundo.set_shader_parameter("submerso", 1.0 if cenario.get("agua", false) else 0.0)
 	imagem.material = fundo
 	aplicar_clima(0, 0.0)
 
@@ -146,14 +163,16 @@ func montar_cenario() -> void:
 	nuvem.rosto = cenario.get("nuvem_rosto", false)
 	add_child(nuvem)
 
+	var esconderijos: Variant = cenario["esconderijo"]
 	for i in range(total):
 		var animal := Animal.new()
 		add_child(animal)
-		animal.configurar(nomes[i], cenario["esconderijo"])
+		animal.configurar(nomes[i], esconderijos[i] if esconderijos is Array else esconderijos)
 		animal.position = Vector2(POSICAO_ANIMAIS[i], 340)
 		animais[nomes[i]] = animal
 
 	vento = Vento.new()
+	vento.agua = cenario.get("agua", false)
 	add_child(vento)
 	vento.rajada.connect(func(forca: float):
 		var tw := create_tween()
@@ -166,7 +185,7 @@ func montar_cenario() -> void:
 
 ## Clima do cenário conforme quantos amigos já têm cor.
 func aplicar_clima(nivel: int, duracao: float) -> void:
-	var alvo := {"saturacao": SATURACAO[nivel], "brilho": BRILHO[nivel], "vinheta": VINHETA[nivel]}
+	var alvo := {"saturacao": SATURACAO[nivel], "brilho": brilho[nivel], "vinheta": VINHETA[nivel]}
 	for parametro in alvo:
 		if duracao <= 0.0:
 			fundo.set_shader_parameter(parametro, alvo[parametro])
@@ -297,6 +316,7 @@ func montar_interface() -> void:
 		nome_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		placa.add_child(nome_label)
 		placas.append(placa)
+		nomes_placas.append(nome_label)
 
 	painel_legenda = painel(Color(1, 0.98, 0.93, 0.94))
 	painel_legenda.position = Vector2(60, 546)
@@ -310,6 +330,7 @@ func montar_interface() -> void:
 	painel_legenda.add_child(legenda)
 
 	montar_introducao(tela)
+	montar_nomes(tela)
 
 func montar_introducao(tela: CanvasLayer) -> void:
 	introducao = Control.new()
@@ -372,6 +393,13 @@ func _ao_narrar(chave: String, texto: String) -> void:
 		legenda.text = texto
 		legenda.modulate.a = 0.0
 		create_tween().tween_property(legenda, "modulate:a", 1.0, 0.3)
+	# Apresentação dos nomes: o amigo da vez se destaca e dá um pulinho.
+	if frases_nomes.has(chave):
+		var i: int = frases_nomes[chave]
+		for j in range(total):
+			animais[nomes[j]].em_destaque = j == i
+		animais[nomes[i]].festejar(0.0)
+		destacar_placa(i)
 
 func _ao_terminar_fala() -> void:
 	if iniciada and etapa < total and not animando and not cutucados.has(etapa):
@@ -480,6 +508,7 @@ func avancar_pendentes() -> void:
 		if etapa == total:
 			narrador.falar(["festa_" + nome] + cenario["final"])
 			grande_final()
+			preparar_nomes()
 		elif pendentes.has(nomes[etapa]):
 			narrador.falar(["festa_" + nome])
 			await esperar_narrador(12.0)
@@ -629,6 +658,7 @@ func processar_animais(desenhos: Array) -> void:
 		if not item is Dictionary:
 			continue
 		var nome := sem_acento(str(item.get("nome", "")).strip_edges().to_lower())
+		nome = apelidos.get(nome, nome)
 		if not nome in nomes:
 			continue
 		var recebidas: Variant = item.get("cores", [])
@@ -658,3 +688,167 @@ func sem_acento(texto: String) -> String:
 	for par in [["á", "a"], ["ã", "a"], ["â", "a"], ["à", "a"], ["é", "e"], ["ê", "e"], ["í", "i"], ["ó", "o"], ["õ", "o"], ["ô", "o"], ["ú", "u"], ["ç", "c"]]:
 		texto = texto.replace(par[0], par[1])
 	return texto
+
+# ---------------------------------------------------------------- nomes dos amigos
+
+func montar_nomes(tela: CanvasLayer) -> void:
+	painel_nome = painel(Color("#fff8e9"), Color("#f2b632"))
+	painel_nome.position = Vector2(176, 542)
+	painel_nome.size = Vector2(800, 96)
+	painel_nome.hide()
+	tela.add_child(painel_nome)
+	var coluna := VBoxContainer.new()
+	coluna.add_theme_constant_override("separation", 6)
+	painel_nome.add_child(coluna)
+	pergunta = rotulo("Qual o nome deste amigo?", 20, Color("#5b3f8c"))
+	pergunta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(pergunta)
+	var linha := HBoxContainer.new()
+	linha.add_theme_constant_override("separation", 12)
+	coluna.add_child(linha)
+	campo = LineEdit.new()
+	campo.placeholder_text = "ESCREVA O NOME AQUI"
+	campo.max_length = 18
+	campo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	campo.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	campo.add_theme_font_size_override("font_size", 26)
+	campo.add_theme_color_override("font_color", Color("#302c35"))
+	campo.add_theme_color_override("font_placeholder_color", Color("#b5aa98"))
+	campo.add_theme_color_override("caret_color", Color("#5b3f8c"))
+	for estado in ["normal", "focus"]:
+		var e := StyleBoxFlat.new()
+		e.bg_color = Color.WHITE
+		e.border_color = Color("#7b5fc7") if estado == "focus" else Color("#dccb9e")
+		e.set_border_width_all(3)
+		e.set_corner_radius_all(12)
+		e.content_margin_left = 12
+		e.content_margin_right = 12
+		campo.add_theme_stylebox_override(estado, e)
+	# Letras maiúsculas, como o resto da tela.
+	campo.text_changed.connect(func(texto: String):
+		var cursor := campo.caret_column
+		campo.text = texto.to_upper()
+		campo.caret_column = cursor
+	)
+	campo.text_submitted.connect(func(_texto: String): confirmar_nome())
+	linha.add_child(campo)
+	var ok := botao("OK", Color("#4caf50"), 24)
+	ok.custom_minimum_size = Vector2(110, 0)
+	ok.focus_mode = Control.FOCUS_NONE # o cursor continua no campo
+	ok.pressed.connect(confirmar_nome)
+	linha.add_child(ok)
+
+	# Setinha amarela que pula em cima do amigo da vez.
+	seta = Node2D.new()
+	seta.z_index = 5
+	var ponta := PackedVector2Array([Vector2(-30, -40), Vector2(30, -40), Vector2(0, 0)])
+	var miolo := Polygon2D.new()
+	miolo.polygon = ponta
+	miolo.color = Color("#ffd34d")
+	seta.add_child(miolo)
+	var contorno := Line2D.new()
+	contorno.points = ponta
+	contorno.closed = true
+	contorno.width = 5
+	contorno.default_color = Color("#302c35")
+	contorno.joint_mode = Line2D.LINE_JOINT_ROUND
+	seta.add_child(contorno)
+	seta.hide()
+	add_child(seta)
+
+## Depois do grande final: espera a narração acabar e começa a dar nome aos amigos.
+func preparar_nomes() -> void:
+	await esperar_narrador(40.0)
+	await get_tree().create_timer(1.0).timeout
+	if nomeando:
+		return
+	nomeando = true
+	indice_nome = 0
+	nomes_dados.clear()
+	status.text = "Olho Mágico: agora vamos dar nome aos amigos!"
+	painel_legenda.hide()
+	painel_nome.show()
+	painel_nome.modulate.a = 0.0
+	create_tween().tween_property(painel_nome, "modulate:a", 1.0, 0.4)
+	narrador.falar(["nomes_inicio"])
+	focar_animal(0)
+
+## Coloca o foco no amigo i: holofote, setinha em cima, placa em destaque e o cursor no campo.
+func focar_animal(i: int) -> void:
+	for j in range(total):
+		animais[nomes[j]].em_destaque = j == i
+	destacar_placa(i)
+	pergunta.text = "Qual o nome deste amigo? (%s)" % rotulos[i]
+	campo.text = ""
+	campo.grab_focus()
+	var animal: Node2D = animais[nomes[i]]
+	var topo: float = animal.global_position.y + animal.topo() - 12.0
+	if pulo_seta and pulo_seta.is_valid():
+		pulo_seta.kill()
+	seta.show()
+	seta.scale = Vector2.ONE
+	seta.position = Vector2(animal.global_position.x, topo - 60.0)
+	pulo_seta = create_tween()
+	pulo_seta.tween_property(seta, "position:y", topo, 0.45).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	pulo_seta.tween_callback(func():
+		pulo_seta = create_tween().set_loops()
+		pulo_seta.tween_property(seta, "position:y", topo - 14.0, 0.4).set_trans(Tween.TRANS_SINE)
+		pulo_seta.tween_property(seta, "position:y", topo, 0.4).set_trans(Tween.TRANS_SINE)
+	)
+	animal.festejar(0.0)
+
+## Destaca a placa do amigo i (ou nenhuma, com -1).
+func destacar_placa(i: int) -> void:
+	for j in range(total):
+		var vez := j == i
+		create_tween().tween_property(placas[j], "scale", Vector2(1.1, 1.1) if vez else Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK)
+		var estilo: StyleBoxFlat = placas[j].get_theme_stylebox("panel")
+		estilo.border_color = Color("#f2b632") if vez else Color("#79c968")
+
+func confirmar_nome() -> void:
+	if not nomeando or indice_nome >= total:
+		return
+	var nome_dado := campo.text.strip_edges().to_upper()
+	if nome_dado.is_empty():
+		# Ainda sem nome: o painel balança e o cursor volta para o campo.
+		var tw := create_tween()
+		for passo in [12.0, -10.0, 6.0, 0.0]:
+			tw.tween_property(painel_nome, "position:x", 176.0 + passo, 0.06)
+		campo.grab_focus()
+		return
+	nomes_dados.append(nome_dado)
+	nomes_placas[indice_nome].text = nome_dado
+	pop.play()
+	animais[nomes[indice_nome]].coracoes()
+	indice_nome += 1
+	if indice_nome < total:
+		narrador.falar(["nomes_proximo"])
+		focar_animal(indice_nome)
+	else:
+		apresentar_nomes()
+
+## Todos têm nome: o narrador apresenta cada amigo pelo nome que as crianças escolheram.
+func apresentar_nomes() -> void:
+	campo.release_focus()
+	if pulo_seta and pulo_seta.is_valid():
+		pulo_seta.kill()
+	seta.hide()
+	var tw := create_tween()
+	tw.tween_property(painel_nome, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(painel_nome.hide)
+	painel_legenda.show()
+	status.text = "Olho Mágico: que nomes lindos!"
+	var falas: Array = ["nomes_conhecer"]
+	frases_nomes.clear()
+	for i in range(total):
+		var quem: String = pedidos[i]
+		# "Lili" em vez de "LILI", para a voz não soletrar.
+		var frase: String = Narrador.FRASE + "%s%s se chama %s!" % [quem.left(1).to_upper(), quem.substr(1), nomes_dados[i].capitalize()]
+		frases_nomes[frase] = i
+		falas.append(frase)
+	falas.append("nomes_fim")
+	narrador.falar(falas)
+	await esperar_narrador(60.0)
+	for j in range(total):
+		animais[nomes[j]].em_destaque = false
+	destacar_placa(-1)

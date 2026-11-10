@@ -1,12 +1,15 @@
 extends Node
 ## Narrador: toca as falas gravadas (voz neural) em fila, emitindo a legenda de cada uma.
 ## Sem o .mp3, usa a voz portuguesa do sistema; sem voz nenhuma, só mostra a legenda.
+## Frases livres (como os nomes que as crianças escreveram) entram na fila com FRASE na frente
+## e são sempre faladas pela voz do sistema.
 
 signal legenda(chave: String, texto: String)
 signal terminou
 
 const PASTA := "res://godot/assets/narracao/"
 const VELOCIDADE_SISTEMA := 1.15
+const FRASE := "="
 
 var textos: Dictionary = {}
 var fila: Array[String] = []
@@ -51,6 +54,8 @@ func _melhor_voz() -> String:
 	return melhor
 
 func texto(chave: String) -> String:
+	if chave.begins_with(FRASE):
+		return chave.trim_prefix(FRASE)
 	return str(textos.get(chave, ""))
 
 func falar(chaves: Array, interromper: bool = true) -> void:
@@ -83,7 +88,7 @@ func _proxima() -> void:
 	legenda.emit(chave, frase)
 	_id_fala += 1
 	var caminho := PASTA + chave + ".mp3"
-	if ResourceLoader.exists(caminho):
+	if not chave.begins_with(FRASE) and ResourceLoader.exists(caminho):
 		player.stream = load(caminho)
 		player.play()
 	elif not voz_sistema.is_empty():

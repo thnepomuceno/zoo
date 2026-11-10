@@ -1,6 +1,6 @@
 extends Node2D
-## Um animal de um cenário. Começa cinza, escondido atrás de uma moita (floresta) ou de um
-## fardo de feno (fazenda), espiando com medo. Quando recebe as cores do cartão pintado,
+## Um animal de um cenário. Começa cinza, escondido atrás de uma moita (floresta), de um
+## fardo de feno (fazenda), de juncos e pedras (lagoa) ou de algas e pedras (mar), espiando com medo. Quando recebe as cores do cartão pintado,
 ## sai do esconderijo.
 
 const Tex := preload("res://godot/scenes/texturas.gd")
@@ -12,6 +12,7 @@ const BASE_MOITA := 8.0 # a moita vai até um pouquinho abaixo das patas
 
 ## tamanho: maior lado na tela. espiar: quanto do corpo aparece por cima da moita.
 ## olhos: posição (0..1) no desenho, para as gotinhas de medo. voo: altura em que flutua.
+## nada: em vez de bater asas, nada balançando de leve (peixes, baleia, tartaruga, boto).
 const DADOS := {
 	"onca": {"tamanho": 232.0, "espiar": 0.42, "olhos": [Vector2(0.29, 0.25), Vector2(0.55, 0.25)], "pulo": 12.0, "ritmo": 2.8, "balanco": 0.05, "voo": 0.0},
 	"macaco": {"tamanho": 250.0, "espiar": 0.45, "olhos": [Vector2(0.33, 0.25), Vector2(0.5, 0.25)], "pulo": 22.0, "ritmo": 4.0, "balanco": 0.12, "voo": 0.0},
@@ -21,11 +22,22 @@ const DADOS := {
 	"porco": {"tamanho": 225.0, "espiar": 0.5, "olhos": [Vector2(0.21, 0.39), Vector2(0.52, 0.39)], "pulo": 10.0, "ritmo": 3.0, "balanco": 0.06, "voo": 0.0},
 	"pato": {"tamanho": 225.0, "espiar": 0.5, "olhos": [Vector2(0.61, 0.21), Vector2(0.79, 0.21)], "pulo": 12.0, "ritmo": 3.6, "balanco": 0.09, "voo": 0.0},
 	"galinha": {"tamanho": 240.0, "espiar": 0.45, "olhos": [Vector2(0.16, 0.19), Vector2(0.28, 0.19)], "pulo": 10.0, "ritmo": 4.2, "balanco": 0.07, "voo": 0.0},
+	"sapo": {"tamanho": 215.0, "espiar": 0.45, "olhos": [Vector2(0.33, 0.13), Vector2(0.67, 0.13)], "pulo": 30.0, "ritmo": 3.4, "balanco": 0.04, "voo": 0.0},
+	"peixe_lagoa": {"tamanho": 215.0, "espiar": 0.5, "olhos": [Vector2(0.22, 0.42), Vector2(0.38, 0.42)], "pulo": 12.0, "ritmo": 2.2, "balanco": 0.08, "voo": 40.0, "nada": true},
+	"capivara": {"tamanho": 240.0, "espiar": 0.42, "olhos": [Vector2(0.55, 0.2)], "pulo": 8.0, "ritmo": 2.4, "balanco": 0.04, "voo": 0.0},
+	"cobra": {"tamanho": 235.0, "espiar": 0.5, "olhos": [Vector2(0.6, 0.12), Vector2(0.78, 0.13)], "pulo": 8.0, "ritmo": 2.6, "balanco": 0.1, "voo": 0.0},
+	"baleia": {"tamanho": 262.0, "espiar": 0.55, "olhos": [Vector2(0.13, 0.4), Vector2(0.37, 0.4)], "pulo": 10.0, "ritmo": 1.6, "balanco": 0.05, "voo": 30.0, "nada": true},
+	"peixe_mar": {"tamanho": 215.0, "espiar": 0.5, "olhos": [Vector2(0.15, 0.4), Vector2(0.32, 0.38)], "pulo": 14.0, "ritmo": 2.4, "balanco": 0.08, "voo": 44.0, "nada": true},
+	"tartaruga": {"tamanho": 245.0, "espiar": 0.5, "olhos": [Vector2(0.7, 0.15), Vector2(0.85, 0.15)], "pulo": 10.0, "ritmo": 1.8, "balanco": 0.06, "voo": 28.0, "nada": true},
+	"boto": {"tamanho": 245.0, "espiar": 0.45, "olhos": [Vector2(0.55, 0.12)], "pulo": 16.0, "ritmo": 2.2, "balanco": 0.1, "voo": 36.0, "nada": true},
 }
 ## Esconderijos: textura e as cores do que voa quando o animal sai.
 const ESCONDERIJOS := {
 	"moita": ["#5fae4f", "#86cf6a", "#3f8a3a"],
 	"feno": ["#e8c35f", "#f3d98a", "#c9a03f"],
+	"pedra": ["#a9a7b4", "#d9c79a", "#8a8896"],
+	"junco": ["#6dbb5a", "#9fd77f", "#a0703f"],
+	"alga": ["#4fa86a", "#7fd08a", "#f49cbe"],
 }
 
 var nome: String
@@ -93,7 +105,7 @@ func configurar(nome_animal: String, tipo_esconderijo: String = "moita") -> void
 
 	# A moita fica na frente do corpo enquanto ele está escondido.
 	moita = Sprite2D.new()
-	moita.texture = Tex.feno() if esconderijo == "feno" else Tex.moita()
+	moita.texture = Tex.esconderijo(esconderijo)
 	var largura := maxf(tam.x * escala * 1.02, 225.0)
 	moita.scale = Vector2(1.0, 0.82) * largura / 280.0
 	moita.offset = Vector2(0, -78) # pivô na base, para chacoalhar pelo pé
@@ -121,6 +133,10 @@ func posicao_escondido() -> float:
 func chao() -> float:
 	return PE - float(dados["voo"])
 
+## Altura do alto da cabeça quando está fora do esconderijo, parado (no espaço deste nó).
+func topo() -> float:
+	return chao() - altura * escala
+
 ## Corta o que estiver abaixo da moita, para as patas não aparecerem por baixo dela.
 func _atualizar_corte() -> void:
 	var corte := 2.0
@@ -146,7 +162,13 @@ func _process(delta: float) -> void:
 		var fase: float = t * float(dados["ritmo"])
 		var pulo := absf(sin(fase))
 		var voo := float(dados["voo"])
-		if voo > 0.0:
+		if dados.get("nada", false):
+			# Nada no lugar: sobe e desce devagar, inclinando o corpo como quem dá braçadas.
+			corpo.position.y = chao() - sin(fase) * float(dados["pulo"])
+			corpo.scale = base * Vector2(1.0 + sin(fase * 2.0) * 0.025, 1.0 - sin(fase * 2.0) * 0.02)
+			corpo.rotation = sin(fase * 0.7) * float(dados["balanco"])
+			sombra.scale = Vector2(1.2 + sin(fase) * 0.12, 0.24)
+		elif voo > 0.0:
 			# Flutua batendo as asas (o desenho "fecha" e "abre" na horizontal).
 			corpo.position.y = chao() - sin(fase * 1.3) * float(dados["pulo"])
 			corpo.scale = base * Vector2(1.0 - absf(sin(t * 7.0)) * 0.28, 1.0)

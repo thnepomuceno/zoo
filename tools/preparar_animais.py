@@ -5,10 +5,13 @@ Para cada cartão gera, em godot/assets/animais:
     <nome>_regioes.png  mapa das regiões pintáveis (0 = cor 1, 85 = cor 2, 170 = cor 3,
                         255 = fica branco, como o brilho dos olhos)
 
-Uso (nomes na ordem dos cartões: cima-esq, cima-dir, baixo-esq, baixo-dir):
+Uso (nomes na ordem dos cartões: cima-esq, cima-dir, baixo-esq, baixo-dir; nas folhas
+"uma por folha", na ordem das páginas):
     pip install pypdf pillow numpy scipy
     python tools/preparar_animais.py floresta_encantada_8x8_4_na_folha_v2.pdf macaco borboleta tamandua onca
     python tools/preparar_animais.py fazenda_feliz_8x8_4_na_folha.pdf cavalo porco pato galinha
+    python tools/preparar_animais.py "lagoa_cristalina_8x8_uma_por_folha (1).pdf" sapo peixe_lagoa capivara cobra
+    python tools/preparar_animais.py aventura_marinha_8x8_uma_por_folha.pdf baleia peixe_mar tartaruga boto
 """
 import io
 import sys
@@ -23,6 +26,7 @@ DESTINO = Path(__file__).resolve().parent.parent / "godot" / "assets" / "animais
 LADO = 512  # maior lado da imagem final, em pixels
 # Área do desenho de cada cartão na folha A4, em pontos (sem cabeçalho e sem o nome).
 CAIXAS = [(57, 152, 278, 376), (318, 152, 539, 376), (57, 465, 278, 689), (318, 465, 539, 689)]
+CAIXA_UNICA = (186, 309, 409, 533)  # folhas "uma por folha": um cartão no meio da página
 
 
 def preparar(g: np.ndarray, nome: str) -> None:
@@ -70,11 +74,13 @@ def preparar(g: np.ndarray, nome: str) -> None:
 def main() -> None:
     if len(sys.argv) != 6:
         sys.exit(__doc__)
-    pagina = PdfReader(sys.argv[1]).pages[0]
-    folha = Image.open(io.BytesIO(pagina.images[0].data)).convert("L")
-    k = folha.width / float(pagina.mediabox.width)
+    paginas = PdfReader(sys.argv[1]).pages
     DESTINO.mkdir(parents=True, exist_ok=True)
-    for nome, caixa in zip(sys.argv[2:], CAIXAS):
+    # Uma folha com 4 cartões, ou 4 folhas com um cartão cada.
+    cartoes = [(0, c) for c in CAIXAS] if len(paginas) == 1 else [(i, CAIXA_UNICA) for i in range(4)]
+    for nome, (i, caixa) in zip(sys.argv[2:], cartoes):
+        folha = Image.open(io.BytesIO(paginas[i].images[0].data)).convert("L")
+        k = folha.width / float(paginas[i].mediabox.width)
         recorte = folha.crop(tuple(int(v * k) for v in caixa))
         preparar(np.asarray(recorte).astype(np.float32), nome)
 

@@ -709,6 +709,8 @@ func montar_nomes(tela: CanvasLayer) -> void:
 	campo = LineEdit.new()
 	campo.placeholder_text = "ESCREVA O NOME AQUI"
 	campo.max_length = 18
+	# Enter confirma mas o cursor continua no campo, pronto para o próximo nome.
+	campo.keep_editing_on_text_submit = true
 	campo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	campo.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	campo.add_theme_font_size_override("font_size", 26)
@@ -780,7 +782,7 @@ func focar_animal(i: int) -> void:
 	destacar_placa(i)
 	pergunta.text = "Qual o nome deste amigo? (%s)" % rotulos[i]
 	campo.text = ""
-	campo.grab_focus()
+	escrever()
 	var animal: Node2D = animais[nomes[i]]
 	var topo: float = animal.global_position.y + animal.topo() - 12.0
 	if pulo_seta and pulo_seta.is_valid():
@@ -814,10 +816,11 @@ func confirmar_nome() -> void:
 		var tw := create_tween()
 		for passo in [12.0, -10.0, 6.0, 0.0]:
 			tw.tween_property(painel_nome, "position:x", 176.0 + passo, 0.06)
-		campo.grab_focus()
+		escrever()
 		return
 	nomes_dados.append(nome_dado)
 	nomes_placas[indice_nome].text = nome_dado
+	narrador.preparar_frase(frase_nome(indice_nome)) # já vai gerando a voz da apresentação
 	pop.play()
 	animais[nomes[indice_nome]].coracoes()
 	indice_nome += 1
@@ -843,7 +846,7 @@ func apresentar_nomes() -> void:
 	for i in range(total):
 		var quem: String = pedidos[i]
 		# "Lili" em vez de "LILI", para a voz não soletrar.
-		var frase: String = Narrador.FRASE + "%s%s se chama %s!" % [quem.left(1).to_upper(), quem.substr(1), nomes_dados[i].capitalize()]
+		var frase: String = Narrador.FRASE + frase_nome(i)
 		frases_nomes[frase] = i
 		falas.append(frase)
 	falas.append("nomes_fim")
@@ -852,3 +855,14 @@ func apresentar_nomes() -> void:
 	for j in range(total):
 		animais[nomes[j]].em_destaque = false
 	destacar_placa(-1)
+
+## Foco no campo já em modo de edição (o Godot sai da edição ao apertar Enter).
+func escrever() -> void:
+	campo.grab_focus()
+	campo.edit()
+	campo.caret_column = campo.text.length()
+
+## "A capivara se chama Luna!" para o amigo i.
+func frase_nome(i: int) -> String:
+	var quem: String = pedidos[i]
+	return "%s%s se chama %s!" % [quem.left(1).to_upper(), quem.substr(1), nomes_dados[i].capitalize()]

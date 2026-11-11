@@ -76,4 +76,8 @@ python tools/gerar_narracao.py cap_onca final_1      # só algumas
 python tools/gerar_narracao.py --voz pt-BR-ThalitaMultilingualNeural --velocidade +15%
 ```
 
-Depois de gerar, abra o projeto no Godot para importar os áudios. Se faltar algum `.mp3`, a fala usa a melhor voz portuguesa do Windows. Os efeitos sonoros (`magia`, `sopro`, `vento` e `pop`) são sintetizados por `tools/gerar_efeitos.py`.
+Depois de gerar, abra o projeto no Godot para importar os áudios. Se faltar algum `.mp3`, a fala usa a melhor voz portuguesa do Windows.
+
+Os nomes que as crianças dão aos amigos não podem ser gravados antes. Por isso, assim que cada nome é confirmado, o jogo chama `tools/falar_frase.py` em segundo plano e gera a frase ("A capivara se chama Luna!") com a mesma voz. Os áudios ficam em cache em `user://frases/`. Isso precisa de Python, `edge-tts` e internet na máquina; sem eles, ou no jogo exportado (que não leva a pasta `tools`), os nomes saem pela voz do Windows.
+
+Os efeitos sonoros (`magia`, `sopro`, `vento` e `pop`) são sintetizados por `tools/gerar_efeitos.py`.

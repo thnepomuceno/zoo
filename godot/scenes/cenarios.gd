@@ -25,6 +25,7 @@ const DADOS := {
 		"posicao_ajudante": Vector2(1080, 268),
 		"esconderijo": "moita", # um para todos ou um por animal
 		"nuvem": [Vector2(1015, 100), Vector2(925, 94), Vector2(835, 90), Vector2(745, 86), Vector2(800, 72)],
+		"nuvem_rosto": true,
 		"escala_nuvem": 1.0,
 		"sol": Vector2.ZERO, # o sol da floresta fica fora do quadro
 		# Shader do fundo: quanto as copas balançam e onde fica o lago.

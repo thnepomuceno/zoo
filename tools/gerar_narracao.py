@@ -23,6 +23,10 @@ except ImportError:
 import edge_tts
 
 PASTA = Path(__file__).resolve().parent.parent / "godot" / "assets" / "narracao"
+# A mesma voz é usada pelo jogo para falar os nomes dos amigos (tools/falar_frase.py).
+VOZ = "pt-BR-FranciscaNeural"
+VELOCIDADE = "+12%"
+TOM = "+4Hz"
 
 
 async def gerar(voz: str, velocidade: str, tom: str, apenas: list[str]) -> None:
@@ -37,9 +41,9 @@ async def gerar(voz: str, velocidade: str, tom: str, apenas: list[str]) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--voz", default="pt-BR-FranciscaNeural")
-    p.add_argument("--velocidade", default="+12%")
-    p.add_argument("--tom", default="+4Hz")
+    p.add_argument("--voz", default=VOZ)
+    p.add_argument("--velocidade", default=VELOCIDADE)
+    p.add_argument("--tom", default=TOM)
     p.add_argument("chaves", nargs="*", help="gera só estas falas")
     a = p.parse_args()
     asyncio.run(gerar(a.voz, a.velocidade, a.tom, a.chaves))

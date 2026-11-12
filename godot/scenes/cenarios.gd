@@ -4,6 +4,10 @@ extends RefCounted
 
 ## Cenário escolhido no carrossel (ou por -- --cenario=fazenda).
 static var escolhido := "floresta"
+## Modo escolhido pelo professor no carrossel (ou por -- --cores-livres).
+## false: cores predefinidas, a narração diz qual cor usar em cada animal.
+## true: cores livres, a criança pinta cada animal com as cores que quiser.
+static var cores_livres := false
 
 const ORDEM := ["floresta", "fazenda", "lagoa", "marinha"]
 
@@ -14,10 +18,13 @@ const DADOS := {
 		"pronto": true,
 		"fundo": "res://godot/assets/floresta/901cc787-2e1c-4038-8e52-4f627eb3e6dc.jpg",
 		"nomes": ["onca", "macaco", "tamandua", "borboleta"],
-		"rotulos": ["Onça amarela", "Macaco marrom", "Tamanduá preto", "Borboleta vermelha"],
-		"pedidos": ["a onça amarela", "o macaco marrom", "o tamanduá preto", "a borboleta vermelha"],
-		"cor_pedida": ["amarelo", "marrom", "preto", "vermelho"],
-		"capitulos": ["A onça tremendo na moita", "O macaco sem coragem", "O tamanduá tímido", "A borboleta que não voa"],
+		"rotulos": ["Onça amarela", "Macaco marrom", "Tamanduá marrom", "Borboleta vermelha"],
+		"pedidos": ["a onça amarela", "o macaco marrom", "o tamanduá marrom", "a borboleta vermelha"],
+		"cor_pedida": ["amarelo", "marrom", "marrom", "vermelho"],
+		# Cores livres: os mesmos animais, sem dizer a cor.
+		"animais": ["Onça", "Macaco", "Tamanduá", "Borboleta"],
+		"pedidos_livres": ["a onça", "o macaco", "o tamanduá", "a borboleta"],
+		"capitulos": ["A onça tremendo na moita.", "O macaco sem coragem.", "O tamanduá tímido.", "A borboleta que não voa."],
 		"intro": ["intro_1", "intro_2", "intro_3"],
 		"final": ["final_1", "final_2"],
 		"fim": "Fim: a Floresta Encantada voltou a ser colorida!",
@@ -42,7 +49,9 @@ const DADOS := {
 		"rotulos": ["Cavalo marrom", "Porco rosa", "Pato amarelo", "Galinha laranja"],
 		"pedidos": ["o cavalo marrom", "o porco rosa", "o pato amarelo", "a galinha laranja"],
 		"cor_pedida": ["marrom", "rosa", "amarelo", "laranja"],
-		"capitulos": ["O cavalo atrás do feno", "O porquinho sem coragem", "O pato com saudade da lagoa", "A galinha encolhidinha"],
+		"animais": ["Cavalo", "Porco", "Pato", "Galinha"],
+		"pedidos_livres": ["o cavalo", "o porco", "o pato", "a galinha"],
+		"capitulos": ["O cavalo atrás do feno.", "O porquinho sem coragem.", "O pato com saudade da lagoa.", "A galinha encolhidinha."],
 		"intro": ["fazenda_intro_1", "fazenda_intro_2", "fazenda_intro_3"],
 		"final": ["fazenda_final_1", "fazenda_final_2"],
 		"fim": "Fim: a Fazenda Feliz voltou a ter cor!",
@@ -70,7 +79,9 @@ const DADOS := {
 		"rotulos": ["Sapo verde", "Peixe azul", "Capivara marrom", "Cobra amarela"],
 		"pedidos": ["o sapo verde", "o peixe azul", "a capivara marrom", "a cobra amarela"],
 		"cor_pedida": ["verde", "azul", "marrom", "amarelo"],
-		"capitulos": ["O sapo atrás dos juncos", "O peixinho atrás da pedra", "A capivara com receio", "A cobra enroladinha"],
+		"animais": ["Sapo", "Peixe", "Capivara", "Cobra"],
+		"pedidos_livres": ["o sapo", "o peixe", "a capivara", "a cobra"],
+		"capitulos": ["O sapo atrás dos juncos.", "O peixinho atrás da pedra.", "A capivara com receio.", "A cobra enroladinha."],
 		"intro": ["lagoa_intro_1", "lagoa_intro_2", "lagoa_intro_3"],
 		"final": ["lagoa_final_1", "lagoa_final_2"],
 		"fim": "Fim: a Lagoa voltou a ser cristalina!",
@@ -97,7 +108,9 @@ const DADOS := {
 		"rotulos": ["Baleia azul", "Peixe laranja", "Tartaruga verde", "Boto cor-de-rosa"],
 		"pedidos": ["a baleia azul", "o peixe laranja", "a tartaruga verde", "o boto cor-de-rosa"],
 		"cor_pedida": ["azul", "laranja", "verde", "rosa"],
-		"capitulos": ["A baleia atrás da pedra", "O peixinho entre as algas", "A tartaruga tímida", "O boto sem brincadeira"],
+		"animais": ["Baleia", "Peixe", "Tartaruga", "Boto"],
+		"pedidos_livres": ["a baleia", "o peixe", "a tartaruga", "o boto"],
+		"capitulos": ["A baleia atrás da pedra.", "O peixinho entre as algas.", "A tartaruga tímida.", "O boto sem brincadeira."],
 		"intro": ["marinha_intro_1", "marinha_intro_2", "marinha_intro_3"],
 		"final": ["marinha_final_1", "marinha_final_2"],
 		"fim": "Fim: o mar voltou a ter todas as cores!",

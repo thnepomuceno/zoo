@@ -13,6 +13,8 @@ const VELOCIDADE_SISTEMA := 1.15
 const FRASE := "="
 
 var textos: Dictionary = {}
+## Com cores livres, usa a fala "<chave>_livre" quando ela existe (sem dizer a cor do animal).
+var cores_livres := false
 var fila: Array[String] = []
 var falando := false
 var player: AudioStreamPlayer
@@ -61,6 +63,12 @@ func _melhor_voz() -> String:
 			melhor = str(v.get("id", ""))
 	return melhor
 
+## A fala que vai ser usada no lugar de `chave` no modo atual.
+func versao(chave: String) -> String:
+	if cores_livres and textos.has(chave + "_livre"):
+		return chave + "_livre"
+	return chave
+
 func texto(chave: String) -> String:
 	if chave.begins_with(FRASE):
 		return chave.trim_prefix(FRASE)
@@ -70,7 +78,7 @@ func falar(chaves: Array, interromper: bool = true) -> void:
 	if interromper:
 		parar()
 	for c in chaves:
-		fila.append(str(c))
+		fila.append(versao(str(c)))
 	if not falando:
 		_proxima()
 

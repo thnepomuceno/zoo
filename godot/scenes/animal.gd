@@ -9,6 +9,8 @@ const SHADER_DESBOTAR := preload("res://godot/shaders/desbotar.gdshader")
 const CINZAS := ["#d7d8de", "#c4c6cf", "#b3b5bf"]
 const PE := 135.0 # distância do centro do nó até as patas
 const BASE_MOITA := 8.0 # a moita vai até um pouquinho abaixo das patas
+## Escondido, o animal fica menor que o normal (mistério); ao sair, cresce até o tamanho cheio.
+const ENCOLHIDO := 0.8
 
 ## tamanho: maior lado na tela. espiar: quanto do corpo aparece por cima da moita.
 ## olhos: posição (0..1) no desenho, para as gotinhas de medo. voo: altura em que flutua.
@@ -90,7 +92,7 @@ func configurar(nome_animal: String, tipo_esconderijo: String = "moita") -> void
 	add_child(sombra)
 
 	corpo = Node2D.new()
-	corpo.scale = Vector2.ONE * escala
+	corpo.scale = Vector2.ONE * escala * ENCOLHIDO
 	add_child(corpo)
 	cinza = Sprite2D.new()
 	cinza.texture = textura
@@ -128,7 +130,7 @@ func novo_material(cores: Array) -> ShaderMaterial:
 
 ## Onde ficam as patas (no nó) para só a cabeça aparecer por cima da moita.
 func posicao_escondido() -> float:
-	return topo_moita + (1.0 - float(dados["espiar"])) * altura * escala
+	return topo_moita + (1.0 - float(dados["espiar"])) * altura * escala * ENCOLHIDO
 
 func chao() -> float:
 	return PE - float(dados["voo"])
@@ -141,7 +143,7 @@ func topo() -> float:
 func _atualizar_corte() -> void:
 	var corte := 2.0
 	if escondido:
-		var limite_local := (PE + BASE_MOITA - 4.0 - corpo.position.y) / escala
+		var limite_local := (PE + BASE_MOITA - 4.0 - corpo.position.y) / corpo.scale.y
 		corte = (limite_local + altura) / altura
 	cinza.material.set_shader_parameter("corte", corte)
 	if colorido.material:
@@ -157,7 +159,7 @@ func _process(delta: float) -> void:
 	if animando:
 		_atualizar_corte()
 		return
-	var base := Vector2.ONE * escala
+	var base := Vector2.ONE * escala * (ENCOLHIDO if escondido else 1.0)
 	if feliz:
 		var fase: float = t * float(dados["ritmo"])
 		var pulo := absf(sin(fase))
@@ -201,7 +203,7 @@ func _process(delta: float) -> void:
 ## Posição de um ponto do desenho (0..1) no espaço deste nó.
 func ponto(uv: Vector2) -> Vector2:
 	var tam := textura.get_size()
-	return corpo.position + Vector2(uv.x * tam.x - tam.x / 2.0, uv.y * tam.y - tam.y) * escala
+	return corpo.position + Vector2(uv.x * tam.x - tam.x / 2.0, uv.y * tam.y - tam.y) * corpo.scale
 
 ## Gotinha de medo que escorre do lado do rosto.
 func gotinha() -> void:
@@ -241,9 +243,10 @@ func colorir(cores: Array, rapido: bool = false) -> void:
 	_atualizar_corte()
 	corpo.rotation = 0.0
 	var base := Vector2.ONE * escala
+	var inicio := base * (ENCOLHIDO if saindo else 1.0)
 
 	var tw := create_tween()
-	tw.tween_property(corpo, "scale", base * Vector2(1.14, 0.82), 0.12 if rapido else 0.35).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(corpo, "scale", inicio * Vector2(1.14, 0.82), 0.12 if rapido else 0.35).set_trans(Tween.TRANS_SINE)
 	await tw.finished
 
 	explodir(cores)

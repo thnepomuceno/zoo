@@ -1,6 +1,7 @@
 extends Control
 ## Carrossel com os 4 cenários da especificação "A Magia das Cores".
-## Setas (ou ← →) trocam o cenário; "Jogar!" (ou Enter) abre a aventura escolhida.
+## Setas (ou ← →) trocam o cenário. O professor escolhe o modo de pintura, que abre a aventura:
+## "Cores predefinidas" (Enter ou P) ou "Cores livres" (L).
 ## Um cenário com "pronto": false aparece como "Em breve".
 
 const Cenarios := preload("res://godot/scenes/cenarios.gd")
@@ -15,7 +16,7 @@ var cartoes: Array[PanelContainer] = []
 var pontos: Array[Panel] = []
 var fundo: TextureRect
 var fundo_material: ShaderMaterial
-var jogar: Button
+var jogar: HBoxContainer
 var aviso: Label
 var pop: AudioStreamPlayer
 
@@ -59,7 +60,7 @@ func _ready() -> void:
 	for lado in [-1, 1]:
 		var seta := botao("<" if lado < 0 else ">", Color("#7b5fc7"), 34)
 		seta.custom_minimum_size = Vector2(64, 64)
-		seta.position = Vector2(CENTRO.x + lado * 190 - 32, 536)
+		seta.position = Vector2(CENTRO.x + lado * 380 - 32, 540)
 		seta.pressed.connect(mudar.bind(lado))
 		add_child(seta)
 
@@ -73,15 +74,25 @@ func _ready() -> void:
 		linha.add_child(ponto)
 		pontos.append(ponto)
 
-	jogar = botao("Jogar!", Color("#4caf50"), 30)
-	jogar.size = Vector2(220, 60)
-	jogar.position = Vector2(CENTRO.x - 110, 538)
-	jogar.pivot_offset = Vector2(110, 30)
-	jogar.pressed.connect(abrir)
+	# Os dois modos de pintura no lugar do "Jogar!".
+	jogar = HBoxContainer.new()
+	jogar.add_theme_constant_override("separation", 24)
+	jogar.position = Vector2(CENTRO.x - 312, 532)
 	add_child(jogar)
-	var pulsar := create_tween().set_loops()
-	pulsar.tween_property(jogar, "scale", Vector2(1.06, 1.06), 0.6).set_trans(Tween.TRANS_SINE)
-	pulsar.tween_property(jogar, "scale", Vector2.ONE, 0.6).set_trans(Tween.TRANS_SINE)
+	for livre in [false, true]:
+		var modo := botao("Pintura com
+cores livres" if livre else "Pintura com
+cores predefinidas", Color("#e0569b") if livre else Color("#4caf50"), 22)
+		modo.custom_minimum_size = Vector2(300, 76)
+		modo.pivot_offset = Vector2(150, 38)
+		modo.tooltip_text = "A criança escolhe as cores de cada animal." if livre else "A atividade diz qual cor usar em cada animal."
+		modo.pressed.connect(abrir.bind(livre))
+		jogar.add_child(modo)
+		var pulsar := create_tween().set_loops()
+		pulsar.tween_interval(0.6 if livre else 0.0) # um pulsa depois do outro
+		pulsar.tween_property(modo, "scale", Vector2(1.05, 1.05), 0.6).set_trans(Tween.TRANS_SINE)
+		pulsar.tween_property(modo, "scale", Vector2.ONE, 0.6).set_trans(Tween.TRANS_SINE)
+		pulsar.tween_interval(0.0 if livre else 0.6)
 	aviso = rotulo("Este cenário chega em breve!", 22, Color("#fff4c9"))
 	aviso.position = Vector2(0, 550)
 	aviso.size = Vector2(1152, 40)
@@ -219,20 +230,21 @@ func mudar(passo: int) -> void:
 func _clique_cartao(evento: InputEvent, i: int) -> void:
 	if evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT:
 		if i == selecionado:
-			abrir()
+			abrir(Cenarios.cores_livres)
 		else:
 			mudar(i - selecionado)
 
-func abrir() -> void:
+func abrir(livre: bool = false) -> void:
 	if not dados(selecionado).get("pronto", false):
 		return
 	Cenarios.escolhido = Cenarios.ORDEM[selecionado]
+	Cenarios.cores_livres = livre
 	get_tree().change_scene_to_file(AVENTURA)
 
 func _unhandled_input(evento: InputEvent) -> void:
 	if not (evento is InputEventKey and evento.pressed and not evento.echo):
 		return
-	if not evento.keycode in [KEY_LEFT, KEY_RIGHT, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_1, KEY_2, KEY_3, KEY_4]:
+	if not evento.keycode in [KEY_LEFT, KEY_RIGHT, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_P, KEY_L, KEY_1, KEY_2, KEY_3, KEY_4]:
 		return
 	get_viewport().set_input_as_handled() # antes de abrir: abrir() já tira o menu da árvore
 	match evento.keycode:
@@ -240,7 +252,9 @@ func _unhandled_input(evento: InputEvent) -> void:
 			mudar(-1)
 		KEY_RIGHT:
 			mudar(1)
-		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-			abrir()
+		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_P:
+			abrir(false)
+		KEY_L:
+			abrir(true)
 		KEY_1, KEY_2, KEY_3, KEY_4:
 			mudar(evento.keycode - KEY_1 - selecionado)

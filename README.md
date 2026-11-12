@@ -1,6 +1,11 @@
 # A Magia das Cores
 
-Abra o project.godot da raiz no Godot e execute a cena principal. Ela abre o **carrossel** com os 4 cenários da especificação "MESA EDUCACIONAL - A magia das cores". Use as setas (ou ← →, ou 1 a 4) e clique em **Jogar!** (ou Enter). Na aventura, o botão **Cenários** (ou Esc) volta ao carrossel. Para abrir um cenário direto: `-- --cenario=fazenda`.
+Abra o project.godot da raiz no Godot e execute a cena principal. Ela abre o **carrossel** com os 4 cenários da especificação "MESA EDUCACIONAL - A magia das cores". Use as setas (ou ← →, ou 1 a 4) e escolha o modo de pintura:
+
+- **Pintura com cores predefinidas** (Enter ou P): a narração diz qual cor usar em cada animal (a onça amarela, o macaco marrom...).
+- **Pintura com cores livres** (L): a criança pinta cada animal com as cores que quiser. As placas e a narração não falam de cor (falas `*_livre` em `roteiro.json`). Para abrir direto neste modo: `-- --cores-livres`.
+
+ Na aventura, o botão **Cenários** (ou Esc) volta ao carrossel. Para abrir um cenário direto: `-- --cenario=fazenda`.
 
 - **1 · Floresta Encantada:** a onça, o macaco, o tamanduá e a borboleta começam cinza, escondidos atrás das moitas. A sábia Coruja pede ajuda.
 - **2 · Fazenda Feliz:** a tempestade levou as cores e a nuvem triste cobre o sol. O cavalo marrom, o porco rosa, o pato amarelo e a galinha laranja estão escondidos atrás dos fardos de feno, e o sábio Galo pede ajuda em cima da cerca. A cada animal, a nuvem se afasta do sol e fica mais alegre. No final, ela sorri e o sol volta a brilhar.
@@ -24,7 +29,7 @@ Formato aceito:
   "desenhos": [
     { "id": "14", "nome": "onca", "cores": ["amarelo"] },
     { "id": "11", "nome": "macaco", "cores": ["marrom"] },
-    { "id": "13", "nome": "tamandua", "cores": ["preto"] },
+    { "id": "13", "nome": "tamandua", "cores": ["marrom"] },
     { "id": "12", "nome": "borboleta", "cores": ["vermelho"] }
   ]
 }
@@ -53,9 +58,9 @@ Cores: bege, amarelo, laranja, verde, azul, marrom, rosa, roxo, vermelho, branco
 A leitura funciona enquanto o aplicativo está aberto. A captura e o reconhecimento da câmera são feitos pelo sistema externo.
 # Dinâmica da história
 
-A aventura segue a ordem **onça amarela → macaco marrom → tamanduá preto → borboleta vermelha**. O vento forte da madrugada levou as cores da Floresta Encantada, e os animais, com medo, esconderam-se atrás da vegetação. A sábia Coruja pede ajuda às crianças.
+A aventura segue a ordem **onça amarela → macaco marrom → tamanduá marrom → borboleta vermelha**. O vento forte da madrugada levou as cores da Floresta Encantada, e os animais, com medo, esconderam-se atrás da vegetação. A sábia Coruja pede ajuda às crianças.
 
-- **Começo dramático:** a floresta está cinza e escura, uma nuvem carregada cobre o sol e chove de leve. Cada animal espia por cima da sua moita, treme, se abaixa e solta gotinhas de medo. O animal da vez fica iluminado e a moita dele chacoalha.
+- **Começo dramático:** a floresta está cinza e escura, uma nuvem carregada cobre o sol e chove de leve. Cada animal espia por cima da sua moita, um pouco menor que o normal (só cresce ao sair do esconderijo), treme, se abaixa e solta gotinhas de medo. O animal da vez fica iluminado e a moita dele chacoalha.
 - **Cenário vivo:** as copas das árvores e a grama balançam com o vento (shader `godot/shaders/cenario.gdshader`), rajadas aparecem de vez em quando, folhas voam e o lago treme. A Coruja pisca e balança no galho.
 - **Transformação:** quando o JSON chega, a Coruja bate as asas e solta uma bola de cor que voa até o animal. A cor se espalha a partir do centro dele, com estrelas e tinta. A moita chacoalha e solta folhas, e o animal pula para fora do esconderijo e solta corações. A borboleta sai voando.
 - **A floresta revive:** a cada animal que aparece, o fundo, as moitas e a Coruja recuperam parte da cor. A nuvem clareia e se afasta do sol, e a música fica mais alegre. No final aparecem um arco-íris e confetes, todos fazem uma dancinha e a Coruja fica feliz.

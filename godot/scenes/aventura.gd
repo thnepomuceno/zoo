@@ -37,6 +37,7 @@ var total: int
 var posicao_nuvem: Array
 var apelidos: Dictionary
 var brilho: Array
+var intro: Array # falas da abertura, já na versão do modo de pintura
 
 var etapa: int = 0
 var iniciada: bool = false
@@ -90,13 +91,15 @@ func _ready() -> void:
 			pasta_json = argumento.trim_prefix("--pasta-json=")
 		elif argumento.begins_with("--cenario="):
 			Cenarios.escolhido = argumento.trim_prefix("--cenario=")
+		elif argumento == "--cores-livres":
+			Cenarios.cores_livres = true
 	carregar_cenario()
 	preparar_audio()
 	montar_cenario()
 	montar_interface()
 	narrador.legenda.connect(_ao_narrar)
 	narrador.terminou.connect(_ao_terminar_fala)
-	narrador.falar(cenario["intro"])
+	narrador.falar(intro)
 	var timer := Timer.new()
 	timer.wait_time = 0.75
 	timer.timeout.connect(ler_pasta)
@@ -115,8 +118,9 @@ func carregar_cenario() -> void:
 	if not cenario.get("pronto", false):
 		cenario = Cenarios.DADOS["floresta"]
 	nomes = cenario["nomes"]
-	rotulos = cenario["rotulos"]
-	pedidos = cenario["pedidos"]
+	# Cores livres: placas e falas só com o nome do animal, sem a cor.
+	rotulos = cenario["animais"] if Cenarios.cores_livres else cenario["rotulos"]
+	pedidos = cenario["pedidos_livres"] if Cenarios.cores_livres else cenario["pedidos"]
 	cor_pedida = cenario["cor_pedida"]
 	titulos = cenario["capitulos"]
 	total = nomes.size()
@@ -354,7 +358,13 @@ func montar_introducao(tela: CanvasLayer) -> void:
 	var titulo := rotulo(cenario.get("titulo_intro", cenario["titulo"]), 32, Color("#5b3f8c"))
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	coluna.add_child(titulo)
+	var modo := rotulo("Pintura com cores livres" if Cenarios.cores_livres else "Pintura com cores predefinidas", 18, Color("#e0569b") if Cenarios.cores_livres else Color("#3f8a3a"))
+	modo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(modo)
+	intro = []
 	for chave in cenario["intro"]:
+		intro.append(narrador.versao(chave))
+	for chave in intro:
 		var p := rotulo(narrador.texto(chave), 20)
 		p.modulate.a = 0.45
 		coluna.add_child(p)
@@ -365,7 +375,7 @@ func montar_introducao(tela: CanvasLayer) -> void:
 	botoes.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	coluna.add_child(botoes)
 	var repetir := botao("Ouvir a história", Color("#7b5fc7"), 20)
-	repetir.pressed.connect(func(): narrador.falar(cenario["intro"]))
+	repetir.pressed.connect(func(): narrador.falar(intro))
 	botoes.add_child(botao_menu(20))
 	botoes.add_child(repetir)
 	var comecar := botao("Vamos pintar!", Color("#4caf50"), 24)
@@ -389,7 +399,7 @@ func voltar_ao_menu() -> void:
 func _ao_narrar(chave: String, texto: String) -> void:
 	for c in paragrafos:
 		create_tween().tween_property(paragrafos[c], "modulate:a", 1.0 if c == chave else 0.45, 0.3)
-	if not chave in cenario["intro"]:
+	if not chave in intro:
 		legenda.text = texto
 		legenda.modulate.a = 0.0
 		create_tween().tween_property(legenda, "modulate:a", 1.0, 0.3)
@@ -405,7 +415,8 @@ func _ao_terminar_fala() -> void:
 	if iniciada and etapa < total and not animando and not cutucados.has(etapa):
 		espera.start(ESPERA_CUTUCAR)
 
-## Tecla K: simula a câmera lendo o cartão do animal da vez, pintado com a cor pedida.
+## Tecla K: simula a câmera lendo o cartão do animal da vez, pintado com a cor pedida
+## (com cores livres, com cores sorteadas).
 ## Antes de começar, inicia a aventura; depois do final, repinta um amigo qualquer.
 func _unhandled_input(evento: InputEvent) -> void:
 	if evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_ESCAPE:
@@ -420,11 +431,12 @@ func _unhandled_input(evento: InputEvent) -> void:
 		return
 	if animando:
 		return
-	if etapa < total:
-		processar_animais([{"nome": nomes[etapa], "cores": [cor_pedida[etapa]]}])
-		return
 	var paleta: Array = CORES.keys()
 	paleta.shuffle()
+	if etapa < total:
+		var cores: Array = paleta.slice(0, randi_range(1, 3)) if Cenarios.cores_livres else [cor_pedida[etapa]]
+		processar_animais([{"nome": nomes[etapa], "cores": cores}])
+		return
 	processar_animais([{"nome": nomes.pick_random(), "cores": paleta.slice(0, randi_range(1, 3))}])
 
 func cutucar() -> void:
@@ -443,6 +455,7 @@ func preparar_audio() -> void:
 	sopro = tocador("res://godot/assets/audio/sopro.wav", -12.0)
 	pop = tocador("res://godot/assets/audio/pop.wav", -10.0)
 	narrador = Narrador.new()
+	narrador.cores_livres = Cenarios.cores_livres
 	narrador.musica = musica
 	narrador.volume_musica = -22.0
 	add_child(narrador)

@@ -132,3 +132,18 @@ const DADOS := {
 
 static func atual() -> Dictionary:
 	return DADOS.get(escolhido, DADOS["floresta"])
+
+## Cenários que aparecem no carrossel (chaves de ORDEM).
+## Sem parâmetro, todos. Com o número da atividade (aplica.exe -1, ou -- -1 no editor),
+## só aquela; também aceita --atividade=1 ou o nome, como -fazenda.
+static func liberados() -> Array:
+	var args := OS.get_cmdline_args() + OS.get_cmdline_user_args()
+	for argumento in args:
+		if not str(argumento).begins_with("-"):
+			continue # valores soltos de outros parâmetros do Godot
+		var valor := str(argumento).trim_prefix("--atividade=").lstrip("-").to_lower()
+		if valor.is_valid_int() and int(valor) >= 1 and int(valor) <= ORDEM.size():
+			return [ORDEM[int(valor) - 1]]
+		if valor in ORDEM and DADOS[valor].get("pronto", false):
+			return [valor]
+	return ORDEM

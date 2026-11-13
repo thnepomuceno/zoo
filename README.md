@@ -7,6 +7,14 @@ Abra o project.godot da raiz no Godot e execute a cena principal. Ela abre o **c
 
  Na aventura, o botão **Cenários** (ou Esc) volta ao carrossel. Para abrir um cenário direto: `-- --cenario=fazenda`.
 
+**Uma atividade só:** passe o número da atividade ao executável, por exemplo `aplica.exe -1`. O carrossel mostra apenas aquele cenário (sem setas nem bolinhas); o botão **Cenários** volta para ele. Sem parâmetro, aparecem todos. Também vale `-2`, `-3`, `-4`, `--atividade=2` ou o nome (`-fazenda`). No editor, coloque depois de `--` (ex.: `-- -1`).
+
+**Cor diferente da pedida (cores predefinidas):** se o cartão chega sem a cor pedida, a tela e a narração avisam ("Oi! Foi pedida a onça na cor amarela. Mas você pintou de azul!"), mostram a cor pedida ao lado da pintada e perguntam se a criança quer tentar de novo:
+- **CANCELAR** (botão vermelho, Backspace ou R): o cartão é descartado e o jogo espera um novo cartão em branco pintado na cor sugerida. O mesmo cartão, se a câmera mandar de novo nos 6 segundos seguintes, é ignorado.
+- **CONTINUAR** (botão verde, Enter ou G): "Certo, vamos prosseguir com a cor que você escolheu!" O animal sai com a cor pintada, e a placa, a festa e a apresentação do nome deixam de citar a cor pedida.
+
+O cartão vale quando a cor pedida aparece entre as cores lidas (a onça amarela com pintas pretas passa). A **tecla J** simula um cartão com a cor errada.
+
 - **1 · Floresta Encantada:** a onça, o macaco, o tamanduá e a borboleta começam cinza, escondidos atrás das moitas. A sábia Coruja pede ajuda.
 - **2 · Fazenda Feliz:** a tempestade levou as cores e a nuvem triste cobre o sol. O cavalo marrom, o porco rosa, o pato amarelo e a galinha laranja estão escondidos atrás dos fardos de feno, e o sábio Galo pede ajuda em cima da cerca. A cada animal, a nuvem se afasta do sol e fica mais alegre. No final, ela sorri e o sol volta a brilhar.
 - **3 · Lagoa Cristalina:** a sujeira da fábrica roubou as cores da lagoa e a fumaça cobre o sol. O sapo verde e a capivara marrom estão atrás dos juncos; o peixe azul e a cobra amarela, atrás das pedras. O Pato Sabido, de óculos, pede ajuda boiando na lagoa.

@@ -3,6 +3,7 @@ extends Control
 ## Setas (ou ← →) trocam o cenário. O professor escolhe o modo de pintura, que abre a aventura:
 ## "Cores predefinidas" (Enter ou P) ou "Cores livres" (L).
 ## Um cenário com "pronto": false aparece como "Em breve".
+## Com aplica.exe -1 (ou -2, -3, -4) o carrossel mostra só aquela atividade (Cenarios.liberados).
 
 const Cenarios := preload("res://godot/scenes/cenarios.gd")
 const SHADER_DESBOTAR := preload("res://godot/shaders/desbotar.gdshader")
@@ -12,6 +13,7 @@ const DISTANCIA := 390.0
 const CENTRO := Vector2(576, 330)
 
 var selecionado := 0
+var lista: Array = [] # chaves dos cenários mostrados, na ordem do carrossel
 var cartoes: Array[PanelContainer] = []
 var pontos: Array[Panel] = []
 var fundo: TextureRect
@@ -22,7 +24,8 @@ var pop: AudioStreamPlayer
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	selecionado = maxi(Cenarios.ORDEM.find(Cenarios.escolhido), 0)
+	lista = Cenarios.liberados()
+	selecionado = maxi(lista.find(Cenarios.escolhido), 0)
 
 	fundo = TextureRect.new()
 	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -52,7 +55,7 @@ func _ready() -> void:
 	sub.add_theme_constant_override("outline_size", 6)
 	add_child(sub)
 
-	for i in Cenarios.ORDEM.size():
+	for i in lista.size():
 		var cartao := montar_cartao(i)
 		add_child(cartao)
 		cartoes.append(cartao)
@@ -62,13 +65,15 @@ func _ready() -> void:
 		seta.custom_minimum_size = Vector2(64, 64)
 		seta.position = Vector2(CENTRO.x + lado * 380 - 32, 540)
 		seta.pressed.connect(mudar.bind(lado))
+		seta.visible = lista.size() > 1
 		add_child(seta)
 
 	var linha := HBoxContainer.new()
 	linha.add_theme_constant_override("separation", 12)
-	linha.position = Vector2(CENTRO.x - (Cenarios.ORDEM.size() * 22 - 12) / 2.0, 506)
+	linha.position = Vector2(CENTRO.x - (lista.size() * 22 - 12) / 2.0, 506)
+	linha.visible = lista.size() > 1
 	add_child(linha)
-	for i in Cenarios.ORDEM.size():
+	for i in lista.size():
 		var ponto := Panel.new()
 		ponto.custom_minimum_size = Vector2(10, 10)
 		linha.add_child(ponto)
@@ -108,7 +113,7 @@ cores predefinidas", Color("#e0569b") if livre else Color("#4caf50"), 22)
 	arrumar(0.0)
 
 func dados(i: int) -> Dictionary:
-	return Cenarios.DADOS[Cenarios.ORDEM[i]]
+	return Cenarios.DADOS[lista[i]]
 
 func montar_cartao(i: int) -> PanelContainer:
 	var d := dados(i)
@@ -153,7 +158,7 @@ func montar_cartao(i: int) -> PanelContainer:
 		breve.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		vazio.add_child(breve)
 		coluna.add_child(vazio)
-	var nome := rotulo("%d · %s" % [i + 1, d["titulo"]], 26, Color("#5b3f8c"))
+	var nome := rotulo("%d · %s" % [Cenarios.ORDEM.find(lista[i]) + 1, d["titulo"]], 26, Color("#5b3f8c"))
 	coluna.add_child(nome)
 	return cartao
 
@@ -237,7 +242,7 @@ func _clique_cartao(evento: InputEvent, i: int) -> void:
 func abrir(livre: bool = false) -> void:
 	if not dados(selecionado).get("pronto", false):
 		return
-	Cenarios.escolhido = Cenarios.ORDEM[selecionado]
+	Cenarios.escolhido = lista[selecionado]
 	Cenarios.cores_livres = livre
 	get_tree().change_scene_to_file(AVENTURA)
 
@@ -257,4 +262,6 @@ func _unhandled_input(evento: InputEvent) -> void:
 		KEY_L:
 			abrir(true)
 		KEY_1, KEY_2, KEY_3, KEY_4:
-			mudar(evento.keycode - KEY_1 - selecionado)
+			var alvo := lista.find(Cenarios.ORDEM[evento.keycode - KEY_1])
+			if alvo >= 0:
+				mudar(alvo - selecionado)

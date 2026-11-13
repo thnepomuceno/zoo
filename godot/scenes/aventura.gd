@@ -85,6 +85,17 @@ var campo: LineEdit
 var seta: Node2D
 var pulo_seta: Tween
 
+# Cores predefinidas: quando o cartão chega com outra cor, pergunta se tenta de novo ou continua.
+signal escolheu(continuar: bool)
+var decidindo := false
+var recusados: Dictionary = {} # nome -> {"cores", "ate"}: cartão recusado, ignorado por alguns segundos
+var cor_trocada: Dictionary = {} # amigos que ficaram com uma cor diferente da pedida
+var painel_cor: Control
+var texto_cor: Label
+var amostra_pedida: Panel
+var amostra_pintada: Panel
+const IGNORAR_RECUSADO := 6000 # ms
+
 func _ready() -> void:
 	for argumento in OS.get_cmdline_user_args():
 		if argumento.begins_with("--pasta-json="):
@@ -119,8 +130,8 @@ func carregar_cenario() -> void:
 		cenario = Cenarios.DADOS["floresta"]
 	nomes = cenario["nomes"]
 	# Cores livres: placas e falas só com o nome do animal, sem a cor.
-	rotulos = cenario["animais"] if Cenarios.cores_livres else cenario["rotulos"]
-	pedidos = cenario["pedidos_livres"] if Cenarios.cores_livres else cenario["pedidos"]
+	rotulos = (cenario["animais"] if Cenarios.cores_livres else cenario["rotulos"]).duplicate()
+	pedidos = (cenario["pedidos_livres"] if Cenarios.cores_livres else cenario["pedidos"]).duplicate()
 	cor_pedida = cenario["cor_pedida"]
 	titulos = cenario["capitulos"]
 	total = nomes.size()
@@ -335,6 +346,7 @@ func montar_interface() -> void:
 
 	montar_introducao(tela)
 	montar_nomes(tela)
+	montar_cor_errada(tela)
 
 func montar_introducao(tela: CanvasLayer) -> void:
 	introducao = Control.new()
@@ -422,6 +434,22 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
 		voltar_ao_menu()
+		return
+	if decidindo and evento is InputEventKey and evento.pressed and not evento.echo:
+		# Botão verde (Enter ou G) continua; botão vermelho (Backspace ou R) tenta de novo.
+		if evento.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_G]:
+			get_viewport().set_input_as_handled()
+			escolheu.emit(true)
+		elif evento.keycode in [KEY_BACKSPACE, KEY_R]:
+			get_viewport().set_input_as_handled()
+			escolheu.emit(false)
+		return
+	if evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_J:
+		# Tecla J: simula um cartão pintado com a cor errada (só nas cores predefinidas).
+		get_viewport().set_input_as_handled()
+		if iniciada and not animando and etapa < total and not Cenarios.cores_livres:
+			var outras: Array = CORES.keys().filter(func(c): return c != cor_pedida[etapa])
+			processar_animais([{"nome": nomes[etapa], "cores": [outras.pick_random()]}])
 		return
 	if not (evento is InputEventKey and evento.pressed and not evento.echo and evento.keycode == KEY_K):
 		return
@@ -512,6 +540,9 @@ func avancar_pendentes() -> void:
 		var nome: String = nomes[etapa]
 		var cores: Array = pendentes[nome]
 		pendentes.erase(nome)
+		if not cor_certa(etapa, cores) and not await confirmar_cor(etapa, cores):
+			continue # cartão recusado: espera o novo (que pode já ter chegado)
+		pendentes.erase(nome) # repetições do mesmo cartão que chegaram durante a pergunta
 		pintados[nome] = cores
 		status.text = "Olho Mágico: achei o cartão! Lá vem a cor..."
 		await transformar(nome, cores)
@@ -519,14 +550,14 @@ func avancar_pendentes() -> void:
 		aplicar_clima(etapa, 2.5)
 		atualizar_capitulo()
 		if etapa == total:
-			narrador.falar(["festa_" + nome] + cenario["final"])
+			narrador.falar([festa(nome)] + cenario["final"])
 			grande_final()
 			preparar_nomes()
 		elif pendentes.has(nomes[etapa]):
-			narrador.falar(["festa_" + nome])
+			narrador.falar([festa(nome)])
 			await esperar_narrador(12.0)
 		else:
-			narrador.falar(["festa_" + nome, "cap_" + nomes[etapa]])
+			narrador.falar([festa(nome), "cap_" + nomes[etapa]])
 	animando = false
 
 func esperar_narrador(limite: float) -> void:
@@ -688,12 +719,18 @@ func processar_animais(desenhos: Array) -> void:
 			# Repintou um amigo que já tinha cor: nova explosão, mais rápida.
 			if pintados[nome] != cores and not animais[nome].animando:
 				pintados[nome] = cores
+				var i := nomes.find(nome)
+				if not cor_certa(i, cores):
+					marcar_cor_trocada(i)
 				var lista: Array = []
 				for c in cores:
 					lista.append(Color(CORES[c]))
 				magia.play()
 				animais[nome].colorir(lista, true)
 		else:
+			var recusado: Dictionary = recusados.get(nome, {})
+			if recusado.get("cores", []) == cores and Time.get_ticks_msec() < recusado["ate"]:
+				continue # o mesmo cartão recusado ainda na frente da câmera
 			pendentes[nome] = cores
 	avancar_pendentes()
 
@@ -879,3 +916,124 @@ func escrever() -> void:
 func frase_nome(i: int) -> String:
 	var quem: String = pedidos[i]
 	return "%s%s se chama %s!" % [quem.left(1).to_upper(), quem.substr(1), nomes_dados[i].capitalize()]
+
+# ---------------------------------------------------------------- cor diferente da pedida
+
+## Nas cores predefinidas, o cartão vale se a cor pedida aparece nele.
+## Com cores livres, qualquer cor vale.
+func cor_certa(i: int, cores: Array) -> bool:
+	return Cenarios.cores_livres or cor_pedida[i] in cores
+
+## Festa do amigo; se ele ficou com outra cor, a versão que não fala a cor.
+func festa(nome: String) -> String:
+	if cor_trocada.has(nome) and narrador.textos.has("festa_%s_livre" % nome):
+		return "festa_%s_livre" % nome
+	return "festa_" + nome
+
+## O amigo i ficou com outra cor: a placa e a apresentação do nome deixam de dizer a cor pedida.
+func marcar_cor_trocada(i: int) -> void:
+	cor_trocada[nomes[i]] = true
+	rotulos[i] = cenario["animais"][i]
+	pedidos[i] = cenario["pedidos_livres"][i]
+	if i >= nomes_dados.size(): # ainda sem nome escrito na placa
+		nomes_placas[i].text = rotulos[i]
+
+func montar_cor_errada(tela: CanvasLayer) -> void:
+	painel_cor = Control.new()
+	painel_cor.set_anchors_preset(Control.PRESET_FULL_RECT)
+	painel_cor.hide()
+	tela.add_child(painel_cor)
+	var escuro := ColorRect.new()
+	escuro.color = Color(0.08, 0.07, 0.14, 0.35)
+	escuro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	painel_cor.add_child(escuro)
+	var caixa := painel(Color("#fff8e9"), Color("#f2b632"))
+	caixa.position = Vector2(226, 110)
+	caixa.size = Vector2(700, 340)
+	painel_cor.add_child(caixa)
+	var coluna := VBoxContainer.new()
+	coluna.add_theme_constant_override("separation", 12)
+	caixa.add_child(coluna)
+	texto_cor = rotulo("", 24, Color("#5b3f8c"))
+	texto_cor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(texto_cor)
+
+	# As duas cores lado a lado: a pedida e a pintada.
+	var amostras := HBoxContainer.new()
+	amostras.alignment = BoxContainer.ALIGNMENT_CENTER
+	amostras.add_theme_constant_override("separation", 40)
+	coluna.add_child(amostras)
+	for pedida in [true, false]:
+		var bloco := VBoxContainer.new()
+		var amostra := Panel.new()
+		amostra.custom_minimum_size = Vector2(120, 56)
+		amostra.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		bloco.add_child(amostra)
+		var legenda_amostra := rotulo("Cor pedida" if pedida else "Cor pintada", 16, Color("#7a6f62"))
+		legenda_amostra.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bloco.add_child(legenda_amostra)
+		amostras.add_child(bloco)
+		if pedida:
+			amostra_pedida = amostra
+		else:
+			amostra_pintada = amostra
+
+	var pergunta_cor := rotulo("Quer tentar novamente?", 20)
+	pergunta_cor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(pergunta_cor)
+	var botoes := HBoxContainer.new()
+	botoes.alignment = BoxContainer.ALIGNMENT_CENTER
+	botoes.add_theme_constant_override("separation", 40)
+	coluna.add_child(botoes)
+	for continuar in [false, true]:
+		var bloco := VBoxContainer.new()
+		var b := botao("Continuar" if continuar else "Cancelar", Color("#4caf50") if continuar else Color("#e04f4f"), 24)
+		b.custom_minimum_size = Vector2(220, 56)
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(func(): escolheu.emit(continuar))
+		bloco.add_child(b)
+		var dica := rotulo("Manter a cor pintada" if continuar else "Pintar um novo cartão", 15, Color("#7a6f62"))
+		dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bloco.add_child(dica)
+		botoes.add_child(bloco)
+
+func pintar_amostra(amostra: Panel, cor: String) -> void:
+	var e := StyleBoxFlat.new()
+	e.bg_color = Color(CORES[cor])
+	e.border_color = Color("#302c35")
+	e.set_border_width_all(3)
+	e.set_corner_radius_all(14)
+	amostra.add_theme_stylebox_override("panel", e)
+
+## Avisa que o amigo i veio com outra cor e espera o professor escolher.
+## Verdadeiro: continua com a cor pintada. Falso: o cartão é descartado e espera um novo.
+func confirmar_cor(i: int, cores: Array) -> bool:
+	var nome: String = nomes[i]
+	espera.stop()
+	texto_cor.text = "%s %s" % [narrador.texto("errada_" + nome), narrador.texto("pintou_" + cores[0])]
+	pintar_amostra(amostra_pedida, cor_pedida[i])
+	pintar_amostra(amostra_pintada, cores[0])
+	status.text = "Olho Mágico: essa não é a cor pedida!"
+	painel_cor.show()
+	painel_cor.modulate.a = 0.0
+	create_tween().tween_property(painel_cor, "modulate:a", 1.0, 0.3)
+	pop.play()
+	narrador.falar(["errada_" + nome, "pintou_" + cores[0], "errada_pergunta"])
+	decidindo = true
+	var continuar: bool = await escolheu
+	decidindo = false
+	pop.play()
+	var tw := create_tween()
+	tw.tween_property(painel_cor, "modulate:a", 0.0, 0.25)
+	tw.tween_callback(painel_cor.hide)
+	if continuar:
+		marcar_cor_trocada(i)
+		narrador.falar(["errada_continuar"])
+		await esperar_narrador(8.0)
+		return true
+	recusados[nome] = {"cores": cores, "ate": Time.get_ticks_msec() + IGNORAR_RECUSADO}
+	if pendentes.get(nome, []) == cores:
+		pendentes.erase(nome) # a câmera mandou o mesmo cartão de novo enquanto esperava
+	atualizar_capitulo()
+	narrador.falar(["errada_cancelar"])
+	return false

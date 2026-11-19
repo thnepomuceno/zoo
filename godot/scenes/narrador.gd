@@ -30,6 +30,7 @@ const ESPERA_FRASE := 8.0 # segundos que a fila espera uma frase ainda sendo ger
 var _frases: Dictionary = {} # frase -> caminho do .mp3 gerado
 var _gerando: Dictionary = {} # frase -> id da tarefa
 var _sem_neural := false
+var _tarefa_spd := -1
 
 func _ready() -> void:
 	var json := JSON.new()
@@ -86,6 +87,7 @@ func falar(chaves: Array, interromper: bool = true) -> void:
 func parar() -> void:
 	fila.clear()
 	player.stop()
+	OS.execute("spd-say", ["--cancel"])
 	if not voz_sistema.is_empty():
 		DisplayServer.tts_stop()
 	_id_fala += 1
@@ -107,9 +109,14 @@ func _proxima() -> void:
 	# Frases digitadas pela criança são faladas diretamente pelo TTS do
 	# sistema. Assim não reutilizamos MP3 cacheado com texto antigo ou uma
 	# geração neural incompleta, que pode juntar/levar números indevidos.
-	if chave.begins_with(FRASE) and not voz_sistema.is_empty():
-		registrar_tts(chave, frase, "sistema")
-		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
+	if chave.begins_with(FRASE):
+		var id := _id_fala
+		registrar_tts(chave, frase, "spd-say-tentativa")
+		_tarefa_spd = WorkerThreadPool.add_task(func():
+			# Usa o idioma padrão do Speech Dispatcher (pt_BR na máquina de produção).
+			var resultado := OS.execute("env", ["LANG=pt_BR.UTF-8", "LC_ALL=pt_BR.UTF-8", "spd-say", "--wait", "--language=pt", frase])
+			_spd_say_finalizado.call_deferred(id, resultado, frase)
+		)
 		return
 	var caminho := PASTA + chave + ".mp3"
 	if chave.begins_with(FRASE) and _gerando.has(frase):
@@ -155,6 +162,22 @@ func registrar_evento(linha: String) -> void:
 		arquivo.store_line(linha)
 		arquivo.close()
 
+func _spd_say_finalizado(id: int, resultado: int, frase: String) -> void:
+	if _tarefa_spd >= 0:
+		WorkerThreadPool.wait_for_task_completion(_tarefa_spd)
+	_tarefa_spd = -1
+	if id != _id_fala or not falando:
+		return
+	if resultado == 0:
+		registrar_evento("[TTS] rota=spd-say | id=%d | resultado=ok" % id)
+		_proxima()
+	elif not voz_sistema.is_empty():
+		registrar_evento("[TTS] rota=fallback-godot | id=%d | resultado-spd=%d | voz=%s" % [id, resultado, voz_sistema])
+		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, id)
+	else:
+		registrar_evento("[TTS] rota=sem-voz | id=%d | resultado-spd=%d" % [id, resultado])
+		_proxima()
+
 func _tts_acabou(id: int) -> void:
 	if id == _id_fala and falando:
 		_proxima.call_deferred()
@@ -180,7 +203,7 @@ func preparar_frase(frase: String) -> void:
 		return
 	_gerando[frase] = WorkerThreadPool.add_task(func():
 		var ok := false
-		for python in ["python", "py"]:
+		for python in ["python3", "python", "py"]:
 			if OS.execute(python, [script, frase, destino]) == 0 and FileAccess.file_exists(destino):
 				ok = true
 				break

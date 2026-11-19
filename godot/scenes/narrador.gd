@@ -103,6 +103,12 @@ func _proxima() -> void:
 	var frase := texto(chave)
 	legenda.emit(chave, frase)
 	_id_fala += 1
+	# Frases digitadas pela criança são faladas diretamente pelo TTS do
+	# sistema. Assim não reutilizamos MP3 cacheado com texto antigo ou uma
+	# geração neural incompleta, que pode juntar/levar números indevidos.
+	if chave.begins_with(FRASE) and not voz_sistema.is_empty():
+		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
+		return
 	var caminho := PASTA + chave + ".mp3"
 	if chave.begins_with(FRASE) and _gerando.has(frase):
 		# A frase ainda está sendo gerada: espera um pouco, sem travar a tela.

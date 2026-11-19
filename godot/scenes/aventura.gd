@@ -988,6 +988,13 @@ func frase_nome(i: int) -> String:
 ## forma segura para a interface e para o narrador.
 func normalizar_nome(valor: String) -> String:
 	var partes := valor.strip_edges().split(" ", false)
+	var limpo := ""
+	for caractere in " ".join(partes):
+		# Números e símbolos não fazem parte de um nome narrado; removê-los
+		# evita que o TTS leia sequências como números grudados.
+		if caractere.is_valid_identifier() or caractere in " áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ":
+			limpo += caractere
+	partes = limpo.strip_edges().split(" ", false)
 	return " ".join(partes).substr(0, 18)
 
 func nome_exibicao(valor: String) -> String:

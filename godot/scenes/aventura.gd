@@ -928,6 +928,7 @@ func confirmar_nome() -> void:
 	# Não alteramos o LineEdit a cada tecla: isso quebra acentos, composição
 	# de teclado e a posição do cursor. A normalização acontece somente aqui.
 	var nome_dado := normalizar_nome(campo.text)
+	print("[NOME] campo=%s | normalizado=%s | indice=%d" % [campo.text, nome_dado, indice_nome])
 	if nome_dado.is_empty():
 		# Ainda sem nome: o painel balança e o cursor volta para o campo.
 		var tw := create_tween()

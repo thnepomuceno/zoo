@@ -40,6 +40,7 @@ func _ready() -> void:
 	add_child(player)
 	player.finished.connect(_proxima)
 	voz_sistema = _melhor_voz()
+	registrar_evento("voz selecionada=%s | vozes pt=%s" % [voz_sistema, str(DisplayServer.tts_get_voices())])
 	if not voz_sistema.is_empty():
 		DisplayServer.tts_set_utterance_callback(DisplayServer.TTS_UTTERANCE_ENDED, _tts_acabou)
 
@@ -107,7 +108,7 @@ func _proxima() -> void:
 	# sistema. Assim não reutilizamos MP3 cacheado com texto antigo ou uma
 	# geração neural incompleta, que pode juntar/levar números indevidos.
 	if chave.begins_with(FRASE) and not voz_sistema.is_empty():
-		registrar_tts(chave, frase)
+		registrar_tts(chave, frase, "sistema")
 		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
 		return
 	var caminho := PASTA + chave + ".mp3"
@@ -120,13 +121,15 @@ func _proxima() -> void:
 			if id != _id_fala:
 				return
 	if not chave.begins_with(FRASE) and ResourceLoader.exists(caminho):
+		registrar_tts(chave, frase, "mp3:%s" % caminho)
 		player.stream = load(caminho)
 		player.play()
 	elif chave.begins_with(FRASE) and _frases.has(frase):
+		registrar_tts(chave, frase, "frase-mp3:%s" % _frases[frase])
 		player.stream = AudioStreamMP3.load_from_file(_frases[frase])
 		player.play()
 	elif not voz_sistema.is_empty():
-		registrar_tts(chave, frase)
+		registrar_tts(chave, frase, "sistema-fallback")
 		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
 	else:
 		# Sem voz: dá tempo de ler a legenda.
@@ -137,11 +140,14 @@ func _proxima() -> void:
 
 ## Registra exatamente o texto entregue ao TTS, inclusive os códigos Unicode.
 ## O arquivo fica em user:// para ser preservado entre execuções.
-func registrar_tts(chave: String, frase: String) -> void:
+func registrar_tts(chave: String, frase: String, rota: String) -> void:
 	var codigos: Array[String] = []
 	for caractere in frase:
 		codigos.append("U+%04X" % caractere.unicode_at(0))
-	var linha := "[TTS] chave=%s | texto=%s | unicode=%s" % [chave, frase, ",".join(codigos)]
+	var linha := "[TTS] rota=%s | id=%d | voz=%s | chave=%s | texto=%s | unicode=%s" % [rota, _id_fala, voz_sistema, chave, frase, ",".join(codigos)]
+	registrar_evento(linha)
+
+func registrar_evento(linha: String) -> void:
 	print(linha)
 	var arquivo := FileAccess.open("user://tts.log", FileAccess.READ_WRITE)
 	if arquivo:

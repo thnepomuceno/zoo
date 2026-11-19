@@ -55,6 +55,21 @@ func _ready() -> void:
 	sub.add_theme_constant_override("outline_size", 6)
 	add_child(sub)
 
+	var fechar := botao("×", Color("#e04f4f"), 30)
+	fechar.position = Vector2(1074, 18)
+	fechar.custom_minimum_size = Vector2(58, 58)
+	fechar.add_theme_font_size_override("font_size", 32)
+	fechar.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	for estado in ["normal", "hover", "pressed", "focus"]:
+		var estilo_fechar: StyleBoxFlat = fechar.get_theme_stylebox(estado).duplicate()
+		estilo_fechar.set_corner_radius_all(29)
+		estilo_fechar.set_content_margin_all(0)
+		estilo_fechar.border_width_bottom = 3
+		fechar.add_theme_stylebox_override(estado, estilo_fechar)
+	fechar.tooltip_text = "Fechar"
+	fechar.pressed.connect(confirmar_fechamento)
+	add_child(fechar)
+
 	for i in lista.size():
 		var cartao := montar_cartao(i)
 		add_child(cartao)
@@ -245,6 +260,54 @@ func abrir(livre: bool = false) -> void:
 	Cenarios.escolhido = lista[selecionado]
 	Cenarios.cores_livres = livre
 	get_tree().change_scene_to_file(AVENTURA)
+
+func confirmar_fechamento() -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 20
+	add_child(overlay)
+	var escuro := ColorRect.new()
+	escuro.color = Color(0.08, 0.07, 0.14, 0.48)
+	escuro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(escuro)
+	var caixa := PanelContainer.new()
+	var estilo_caixa := StyleBoxFlat.new()
+	estilo_caixa.bg_color = Color("#fff8e9")
+	estilo_caixa.border_color = Color("#f2b632")
+	estilo_caixa.set_border_width_all(3)
+	estilo_caixa.set_corner_radius_all(18)
+	estilo_caixa.shadow_color = Color(0, 0, 0, 0.2)
+	estilo_caixa.shadow_size = 8
+	caixa.add_theme_stylebox_override("panel", estilo_caixa)
+	caixa.position = Vector2(316, 210)
+	caixa.size = Vector2(520, 220)
+	overlay.add_child(caixa)
+	var coluna := VBoxContainer.new()
+	coluna.alignment = BoxContainer.ALIGNMENT_CENTER
+	coluna.add_theme_constant_override("separation", 20)
+	coluna.set_anchors_preset(Control.PRESET_FULL_RECT)
+	caixa.add_child(coluna)
+	var titulo := rotulo("Fechar aplicação", 28, Color("#5b3f8c"))
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(titulo)
+	var texto := rotulo("Deseja realmente fechar A Magia das Cores?", 19, Color("#302c35"))
+	texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	coluna.add_child(texto)
+	var botoes := HBoxContainer.new()
+	botoes.alignment = BoxContainer.ALIGNMENT_CENTER
+	botoes.add_theme_constant_override("separation", 18)
+	coluna.add_child(botoes)
+	var fechar_btn := botao("Fechar", Color("#e04f4f"), 19)
+	fechar_btn.custom_minimum_size = Vector2(150, 48)
+	fechar_btn.pressed.connect(fechar_aplicativo)
+	botoes.add_child(fechar_btn)
+	var continuar := botao("Continuar", Color("#4caf50"), 19)
+	continuar.custom_minimum_size = Vector2(150, 48)
+	continuar.pressed.connect(overlay.queue_free)
+	botoes.add_child(continuar)
+
+func fechar_aplicativo() -> void:
+	get_tree().quit()
 
 func _unhandled_input(evento: InputEvent) -> void:
 	if not (evento is InputEventKey and evento.pressed and not evento.echo):

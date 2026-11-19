@@ -107,6 +107,7 @@ func _proxima() -> void:
 	# sistema. Assim não reutilizamos MP3 cacheado com texto antigo ou uma
 	# geração neural incompleta, que pode juntar/levar números indevidos.
 	if chave.begins_with(FRASE) and not voz_sistema.is_empty():
+		registrar_tts(chave, frase)
 		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
 		return
 	var caminho := PASTA + chave + ".mp3"
@@ -125,6 +126,7 @@ func _proxima() -> void:
 		player.stream = AudioStreamMP3.load_from_file(_frases[frase])
 		player.play()
 	elif not voz_sistema.is_empty():
+		registrar_tts(chave, frase)
 		DisplayServer.tts_speak(frase, voz_sistema, 90, 1.05, VELOCIDADE_SISTEMA, _id_fala)
 	else:
 		# Sem voz: dá tempo de ler a legenda.
@@ -132,6 +134,20 @@ func _proxima() -> void:
 		await get_tree().create_timer(2.0 + frase.length() * 0.06).timeout
 		if id == _id_fala and falando:
 			_proxima()
+
+## Registra exatamente o texto entregue ao TTS, inclusive os códigos Unicode.
+## O arquivo fica em user:// para ser preservado entre execuções.
+func registrar_tts(chave: String, frase: String) -> void:
+	var codigos: Array[String] = []
+	for caractere in frase:
+		codigos.append("U+%04X" % caractere.unicode_at(0))
+	var linha := "[TTS] chave=%s | texto=%s | unicode=%s" % [chave, frase, ",".join(codigos)]
+	print(linha)
+	var arquivo := FileAccess.open("user://tts.log", FileAccess.READ_WRITE)
+	if arquivo:
+		arquivo.seek_end()
+		arquivo.store_line(linha)
+		arquivo.close()
 
 func _tts_acabou(id: int) -> void:
 	if id == _id_fala and falando:
